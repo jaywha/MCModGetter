@@ -5,8 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MCModGetter"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Minecraft Mod Manager" Height="450" Width="800">
     <Grid>
-        
+        <Expander Header="Expander" HorizontalAlignment="Left" Height="420" VerticalAlignment="Top" Width="298" ExpandDirection="Right">
+            <StackPanel Background="#FFE5E5E5">
+                
+            </StackPanel>
+        </Expander>
+
     </Grid>
 </Window>
