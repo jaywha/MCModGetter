@@ -6,10 +6,11 @@
         xmlns:local="clr-namespace:MCModGetter"
         mc:Ignorable="d"
         Title="Minecraft Mod Manager" Height="450" Width="800">
-    <Grid>
-        <Expander Header="Expander" HorizontalAlignment="Left" Height="420" VerticalAlignment="Top" Width="298" ExpandDirection="Right">
+    <Grid Background="#FF303030">
+        <Expander x:Name="expSideMenu" Header="Menu" HorizontalAlignment="Left" Height="420" VerticalAlignment="Top" Width="298" ExpandDirection="Right" Foreground="White">
             <StackPanel Background="#FFE5E5E5">
-                
+                <local:ExpanderMenuItem Label="Test" Icon="profile_icon.png" Width="{Binding ElementName=expSideMenu,Path=Width,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                        ExpanderItemClick="ExpanderMenuItem_ExpanderItemClick"/>
             </StackPanel>
         </Expander>
 

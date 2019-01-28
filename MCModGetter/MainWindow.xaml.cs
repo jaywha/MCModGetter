@@ -24,5 +24,11 @@ namespace MCModGetter
         {
             InitializeComponent();
         }
+
+        private void ExpanderMenuItem_ExpanderItemClick(object sender, EventArgs e)
+        {
+            if(sender.GetType() == typeof(Label) || sender.GetType() == typeof(Image)) return;
+            else MessageBox.Show($"This menu item works and is labelled as {(sender as ExpanderMenuItem).Label}", "Test Success!!!", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 }

@@ -4,13 +4,18 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:MCModGetter"
-             mc:Ignorable="d" Height="64" Width="361.25">
+             x:Name="uccExpanderMenuItem"
+             mc:Ignorable="d" Height="64" Width="361.25"
+             PreviewMouseDown="MenuItem_Click"
+             MouseEnter="UccExpanderMenuItem_MouseEnter"
+             MouseLeave="UccExpanderMenuItem_MouseLeave">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="64*"/>
             <ColumnDefinition Width="296*"/>
         </Grid.ColumnDefinitions>
-        <Image Grid.Column="0" MouseDown="MenuItem_Click"/>
-        <Label Content="Label" FontSize="24px" Grid.Column="1" HorizontalAlignment="Left" VerticalContentAlignment="Center" Height="64" Width="290" MouseDown="MenuItem_Click"/>
+        <Image Grid.Column="0" MouseDown="MenuItem_Click" Source="{Binding ElementName=uccExpanderMenuItem,Path=Icon,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+        <Label FontSize="24px" Grid.Column="1" HorizontalAlignment="Left" VerticalContentAlignment="Center" Height="64" Width="290" MouseDown="MenuItem_Click"
+               Content="{Binding ElementName=uccExpanderMenuItem,Path=Label,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
     </Grid>
 </UserControl>
