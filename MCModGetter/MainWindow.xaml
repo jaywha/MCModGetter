@@ -3,16 +3,147 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:MCModGetter"
         mc:Ignorable="d"
-        Title="Minecraft Mod Manager" Height="450" Width="800">
+        Title="Minecraft Mod Manager" Height="450" Width="719.375">
+    <Window.Resources>
+        <Style x:Key="MainButtonStyle" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle x:Name="GelBackground" Opacity="1" RadiusX="9" RadiusY="9"
+                                   Fill="{TemplateBinding Background}" StrokeThickness="0.35">
+                                <Rectangle.Stroke>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#FF6495ED" Offset="0" />
+                                        <GradientStop Color="#FF6495ED" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Rectangle.Stroke>
+                            </Rectangle>
+                            <Rectangle x:Name="GelShine" Margin="2,2,2,2" VerticalAlignment="Top" RadiusX="6" RadiusY="6"
+                                   Opacity="1" Stroke="Transparent" Height="30">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#FF703C3C" Offset="0"/>
+                                        <GradientStop Color="#FF472C2C" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Fill" TargetName="GelShine">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#FF4D2F2F" Offset="0"/>
+                                            <GradientStop Color="#FF341E1E" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Fill" TargetName="GelBackground">
+                                    <Setter.Value>
+                                        <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
+                                            <GradientStop Color="#FF362020" Offset="0"/>
+                                            <GradientStop Color="#FF2B1A1A" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True" />
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Fill" TargetName="GelBackground" Value="LightGray">
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Background" Value="#FF472C2C"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Width" Value="55"/>
+            <Setter Property="Height" Value="30"/>
+        </Style>
+
+    </Window.Resources>
     <Grid Background="#FF303030">
-        <Expander x:Name="expSideMenu" Header="Menu" HorizontalAlignment="Left" Height="420" VerticalAlignment="Top" Width="298" ExpandDirection="Right" Foreground="White">
+        <Expander x:Name="expSideMenu" Header="Menu" Height="420" VerticalAlignment="Top" ExpandDirection="Right" Foreground="White" Margin="0,0,494,0">
             <StackPanel Background="#FFE5E5E5">
-                <local:ExpanderMenuItem Label="Test" Icon="profile_icon.png" Width="{Binding ElementName=expSideMenu,Path=Width,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                                        ExpanderItemClick="ExpanderMenuItem_ExpanderItemClick"/>
+                <local:ExpanderMenuItem Label="Login" Icon="profile_icon.png" Width="{Binding ElementName=expSideMenu,Path=Width,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                        ExpanderItemClick="ExpanderMenuItem_LoginClick"/>
+                <local:ExpanderMenuItem Label="Settings" Icon="settings_icon.png" Width="{Binding ElementName=expSideMenu,Path=Width,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                        ExpanderItemClick="ExpanderMenuItem_SettingsClick"/>
             </StackPanel>
         </Expander>
+        <Image Height="32" VerticalAlignment="Top" Source="main_icon.ico" HorizontalAlignment="Right" Width="32"/>
+        <Button x:Name="btnPlayMinecraft" Content="Start Main Launcher" Margin="0,36,0,0" VerticalAlignment="Top" Width="207" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right"/>
+        <TreeView x:Name="tvMods" Height="374" Margin="0,36,212,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="277" Background="LightGray"
+                  ItemsSource="{Binding}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter">
+            <TreeView.Resources>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="HeaderTemplate">
+                        <Setter.Value>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Name="img"
+                           Width="20"
+                           Height="20"
+                           Stretch="Fill"
+                           Source="file.png"/>
+                                    <TextBlock Text="{Binding}" Margin="5,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+                <BitmapImage x:Key="Icon_FolderOpen"   UriSource="open_folder.png"   />
+                <BitmapImage x:Key="Icon_FolderClosed" UriSource="closed_folder.png" />
+
+                <Style x:Key="IconImageStyleSmall" TargetType="Image">
+                    <Setter Property="MaxWidth" Value="16"/>
+                    <Setter Property="MaxHeight" Value="16"/>
+                    <Setter Property="Margin" Value="1"/>
+                </Style>
+            </TreeView.Resources>
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="{x:Type sys:String}"
+                              ItemsSource="{Binding Path=Children}">
+                    <StackPanel Orientation="Horizontal" Margin="1">
+                        <StackPanel.Children>
+                            <Image>
+                                <Image.Style>
+                                    <Style BasedOn="{StaticResource IconImageStyleSmall}" TargetType="Image">
+                                        <Setter Property="Source" Value="{Binding Source={StaticResource Icon_FolderClosed}, Mode=OneTime}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, Path=IsExpanded}" Value="True">
+                                                <Setter Property="Source" Value="{Binding Source={StaticResource Icon_FolderOpen}, Mode=OneTime}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{Binding Title}"/>
+                        </StackPanel.Children>
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+        <Label Content="Current Mods (%APPDATA%\.minecraft\mods\):"
+               Margin="0,0,212,0"
+               HorizontalContentAlignment="Left"
+               VerticalAlignment="Top" 
+               Height="31" 
+               Foreground="DarkCyan"
+               FontSize="11"
+               FontWeight="DemiBold"
+               FontStyle="Italic"
+               ToolTip="Double click to go to Mods folder."
+               MouseDoubleClick="Label_MouseDoubleClick" HorizontalAlignment="Right" Width="277"/>
+
 
     </Grid>
 </Window>

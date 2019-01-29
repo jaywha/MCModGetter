@@ -110,5 +110,20 @@
   <ItemGroup>
     <Resource Include="main_icon.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="settings_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="file.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="folder-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="closed_folder.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="open_folder.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
