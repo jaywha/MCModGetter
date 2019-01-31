@@ -35,11 +35,24 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>main_icon.ico</ApplicationIcon>
+    <ApplicationIcon>Images\main_icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MaterialDesignColors, Version=1.0.0.14576, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MaterialDesignColors.1.1.1\lib\net45\MaterialDesignColors.dll</HintPath>
+    </Reference>
+    <Reference Include="MaterialDesignThemes.Wpf, Version=2.5.0.1205, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MaterialDesignThemes.2.5.0.1205\lib\net45\MaterialDesignThemes.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="MojangSharp, Version=0.45.6678.1621, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Hawezo.MojangSharp.0.5.1\lib\MojangSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -49,6 +62,7 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="UIAutomationProvider" />
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -62,6 +76,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="LoginControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -72,6 +90,9 @@
     </Compile>
     <Compile Include="ExpanderMenuItem.xaml.cs">
       <DependentUpon>ExpanderMenuItem.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="LoginControl.xaml.cs">
+      <DependentUpon>LoginControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -96,6 +117,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -105,25 +127,25 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="profile_icon.png" />
+    <Resource Include="Images\profile_icon.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="main_icon.ico" />
+    <Resource Include="Images\main_icon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="settings_icon.png" />
+    <Resource Include="Images\settings_icon.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="file.png" />
+    <Resource Include="Images\file.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="folder-icon.png" />
+    <Resource Include="Images\folder-icon.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="closed_folder.png" />
+    <Resource Include="Images\closed_folder.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="open_folder.png" />
+    <Resource Include="Images\open_folder.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

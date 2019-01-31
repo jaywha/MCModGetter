@@ -6,8 +6,18 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:MCModGetter"
         mc:Ignorable="d"
+        
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" 
+        TextOptions.TextRenderingMode="Auto"        
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        
         x:Name="wndMain"
-        Title="Minecraft Mod Manager" Height="491.949" Width="790.879">
+        Title="Minecraft Mod Manager" Height="491.949" Width="847.161">
     <Window.Resources>
         <Style x:Key="MainButtonStyle" TargetType="Button">
             <Setter Property="Template">
@@ -71,46 +81,54 @@
         </Style>
 
     </Window.Resources>
-    <Grid Background="#FF303030">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="214*"/>
-            <ColumnDefinition Width="340*"/>
-            <ColumnDefinition Width="229*"/>
-        </Grid.ColumnDefinitions>
-        <Expander x:Name="expSideMenu" Header="Menu" ExpandDirection="Right" Foreground="White" Margin="0,0,3,10">
-            <StackPanel Background="#FFE5E5E5">
-                <local:ExpanderMenuItem Label="Login" Icon="profile_icon.png" Width="{Binding ElementName=expSideMenu,Path=Width,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                                        ExpanderItemClick="ExpanderMenuItem_LoginClick"/>
-                <local:ExpanderMenuItem Label="Settings" Icon="settings_icon.png" Width="{Binding ElementName=expSideMenu,Path=Width,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                                        ExpanderItemClick="ExpanderMenuItem_SettingsClick"/>
-            </StackPanel>
-        </Expander>
-        <Image Height="32" VerticalAlignment="Top" Source="main_icon.ico" HorizontalAlignment="Right" Width="32" Grid.Column="2"/>
-        <Button x:Name="btnPlayMinecraft" Content="Start Main Launcher" Margin="0,36,0,0" VerticalAlignment="Top" Width="207" Style="{StaticResource MainButtonStyle}" Grid.Column="2" HorizontalAlignment="Right" Click="BtnPlayMinecraft_Click"/>
-        <Button x:Name="btnDeleteMod" Content="Delete Selected Mod" Margin="0,422,0,10" Width="207" Style="{StaticResource MainButtonStyle}" Grid.Column="2" HorizontalAlignment="Right" Click="BtnPlayMinecraft_Click" Height="Auto"/>
-        <TreeView x:Name="tvMods" Margin="2,36,4,10" Background="LightGray"
-                  ItemsSource="{Binding ElementName=wndMain, Path=CurrentModList}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter" Grid.Column="1">
-            <TreeView.Resources>
-                <Style TargetType="{x:Type TreeViewItem}">
-                    <Setter Property="HeaderTemplate">
-                        <Setter.Value>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Name="img"
+    <materialDesign:DialogHost DialogClosing="DialogHost_DialogClosing">
+        <materialDesign:DialogHost.DialogContent>
+            <local:LoginControl x:Name="Account"/>
+        </materialDesign:DialogHost.DialogContent>
+        <Grid Background="#FF303030">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Canvas Width="{Binding Path=Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Height="{Binding Path=Height, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Panel.ZIndex="1" Margin="0,0,437,348">
+                <Expander x:Name="expSideMenu" Header="Menu" ExpandDirection="Right" Foreground="White" Margin="0,0,233,0" Background="#FF303030">
+                    <StackPanel Background="#FFE5E5E5">
+                        <local:ExpanderMenuItem x:Name="emiLogin" Label="Login" Icon="Images/profile_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            ExpanderItemClick="ExpanderMenuItem_LoginClick" HorizontalAlignment="Right"/>
+                        <local:ExpanderMenuItem x:Name="emiSettings" Label="Settings" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            ExpanderItemClick="ExpanderMenuItem_SettingsClick" HorizontalAlignment="Right"/>
+                    </StackPanel>
+                </Expander>
+            </Canvas>
+
+
+            <Image Height="32" VerticalAlignment="Top" Source="Images/main_icon.ico" HorizontalAlignment="Right" Width="32"/>
+            <Button x:Name="btnPlayMinecraft" Content="Start Minecraft" Margin="0,36,0,0" VerticalAlignment="Top" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnPlayMinecraft_Click" FontFamily="Minecrafter" FontWeight="Normal" FontSize="22" Height="52" Foreground="#FF8ACD8D"/>
+            <Button x:Name="btnDeleteMod" Content="Delete Selected Mod" Margin="0,422,0,10" Width="207" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnDeleteMod_Click" Height="Auto"/>
+            <TreeView x:Name="tvMods" Margin="216,36,233,10" Background="LightGray"
+                  ItemsSource="{Binding CurrentModList, ElementName=wndMain}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter">
+                <TreeView.Resources>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="HeaderTemplate">
+                            <Setter.Value>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image x:Name="img"
                            Width="20"
                            Height="20"
                            Stretch="Fill"
-                           Source="file.png"/>
-                                    <TextBlock Text="{Binding}" Margin="5,0" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </TreeView.Resources>
-        </TreeView>
-        <Label Content="Current Mods (%APPDATA%\.minecraft\mods\):"
-               Margin="2,0,4,0"
+                           Source="Images/file.png"/>
+                                        <TextBlock Text="{Binding}" Margin="5,0" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TreeView.Resources>
+            </TreeView>
+            <Label Content="Current Mods (%APPDATA%\.minecraft\mods\):"
+               Margin="216,0,233,0"
                HorizontalContentAlignment="Left"
                VerticalAlignment="Top" 
                Height="31" 
@@ -119,8 +137,16 @@
                FontWeight="DemiBold"
                FontStyle="Italic"
                ToolTip="Double click to go to Mods folder."
-               MouseDoubleClick="Label_MouseDoubleClick" Grid.Column="1"/>
-
-
-    </Grid>
+               MouseDoubleClick="Label_MouseDoubleClick"/>
+            <materialDesign:Snackbar x:Name="Toast" Height="80" Margin="216,0,233,8" HorizontalAlignment="Stretch" MessageQueue="{materialDesign:MessageQueue}"/>
+            <Button x:Name="btnOpenDialog" Content="Button" HorizontalAlignment="Left" Margin="54,422,0,0" VerticalAlignment="Top" Width="75" Visibility="Hidden" Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"/>
+            <StackPanel Orientation="Vertical" Margin="10,344,628,10">
+                <Label Content="Access Token:" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White"/>
+                <Label x:Name="lblAccessToken" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="LimeGreen"/>
+                <Label Content="Client Token:" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White"/>
+                <Label x:Name="lblClientToken" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="LimeGreen"/>
+            </StackPanel>
+        </Grid>
+    </materialDesign:DialogHost>
 </Window>
+    

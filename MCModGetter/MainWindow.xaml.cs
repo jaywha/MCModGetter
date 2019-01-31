@@ -17,6 +17,12 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Net;
+using System.Web.Script.Serialization;
+using MojangSharp.Endpoints;
+using MojangSharp.Responses;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 
 namespace MCModGetter
 {
@@ -42,6 +48,8 @@ namespace MCModGetter
                 OnPropertyChanged();
             }
         }
+
+        private AuthenticateResponse UserAuthCache;
 
         public MainWindow()
         {
@@ -102,15 +110,13 @@ namespace MCModGetter
         #endregion
 
         #region Expander Menu Item Clicks
-        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e)
-        {
-            //TODO: Login
+        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) {
+            IInvokeProvider invokeProv = new ButtonAutomationPeer(btnOpenDialog).GetPattern(PatternInterface.Invoke) as IInvokeProvider;
+            invokeProv.Invoke();
         }
 
-        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e)
-        {
-            //TODO: Open Settings Pane
-        }
+        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) =>
+            Toast.MessageQueue.Enqueue("Work in progress...");        
         #endregion
 
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
@@ -126,6 +132,34 @@ namespace MCModGetter
         }
 
         #region Utilitiy Methods
+
         #endregion
+
+        private async void DialogHost_DialogClosing(object sender, MaterialDesignThemes.Wpf.DialogClosingEventArgs eventArgs)
+        {
+            AuthenticateResponse auth = await new Authenticate(new Credentials() { Username = Account.Email, Password = Account.Password }).PerformRequestAsync();
+            if (auth.IsSuccess) {
+                UserAuthCache = auth;
+                Console.WriteLine($"AccessToken: {auth.AccessToken}");
+                Console.WriteLine($"ClientToken: {auth.ClientToken}");
+                lblAccessToken.Content = auth.AccessToken;
+                lblClientToken.Content = auth.ClientToken;
+                emiLogin.Label = Account.Email;
+                emiLogin.IsEnabled = false;
+            } else {
+                Toast.MessageQueue.Enqueue("Couldn't login you in. Check your login stuff and try again.");
+            }
+        }
+
+        private void BtnDeleteMod_Click(object sender, RoutedEventArgs e)
+        {
+            if (tvMods.SelectedItem == null || MessageBox.Show($"Are you sure you want to delete this mod: {tvMods.SelectedValue.ToString()}?", 
+                "Delete Mod Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning)==MessageBoxResult.No) return;
+
+            var modName = tvMods.SelectedValue.ToString();
+            File.Delete(ModFileLocation + modName);
+
+            Toast.MessageQueue.Enqueue($"Successfully deleted the following mod: {modName}");
+        }
     }
 }
