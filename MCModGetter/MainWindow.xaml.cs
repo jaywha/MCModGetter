@@ -26,6 +26,7 @@ using System.Windows.Automation.Provider;
 using WinSCP;
 using System.Configuration;
 using System.Security.Cryptography;
+using Microsoft.Win32;
 
 namespace MCModGetter
 {
@@ -57,7 +58,8 @@ namespace MCModGetter
         public MainWindow()
         {
             InitializeComponent();
-            InitializeSessionsOptions();
+            Hide();
+            Show();
 
             fileSystemWatcher = new FileSystemWatcher(ModFileLocation, "*.*")
             {
@@ -70,7 +72,7 @@ namespace MCModGetter
             fileSystemWatcher.Renamed += FileSystemWatcher_FileEvent;
             fileSystemWatcher.Deleted += FileSystemWatcher_FileEvent;
 
-            foreach (string fileName in Directory.EnumerateFiles(ModFileLocation,"*.*",SearchOption.AllDirectories).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
+            foreach (string fileName in Directory.EnumerateFiles(ModFileLocation, "*.*", SearchOption.AllDirectories).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
             {
                 CurrentModList.Add(fileName);
             }
@@ -137,27 +139,16 @@ namespace MCModGetter
         }
 
         #region Utilitiy Methods
-        private SessionOptions sessionOptions = new SessionOptions
-        {
+        private SessionOptions sessionOptions = new SessionOptions() {
             Protocol = Protocol.Ftp,
             HostName = "192.99.21.157",
-            UserName = ConfigurationManager.AppSettings["UserName"]
+            UserName = "jayw685@gmail.com.5215",
+            Password = "pt2T0gy68E"
         };
 
         private string remotePath = "/mods/";
 
-        public void InitializeSessionsOptions()
-        {
-            string hex = ConfigurationManager.AppSettings["Password"];
-            byte[] bytes =
-                Enumerable.Range(0, hex.Length / 2).
-                    Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
-            byte[] decrypted = ProtectedData.Unprotect(bytes, null, DataProtectionScope.CurrentUser);
-            sessionOptions.Password = Encoding.Unicode.GetString(decrypted);
-        }
-
-        public void ProbeFiles()
-        {
+        public void ProbeFiles() {
             try {
                 using (Session session = new Session()) {
                     // Connect
@@ -170,21 +161,17 @@ namespace MCModGetter
                             EnumerationOptions.EnumerateDirectories |
                                 EnumerationOptions.AllDirectories);
 
-                    foreach (RemoteFileInfo fileInfo in fileInfos.OrderBy(fileInfo => fileInfo.Name))
-                    {
+                    foreach (RemoteFileInfo fileInfo in fileInfos.OrderBy(fileInfo => fileInfo.Name)) {
                         string localFilePath = RemotePath.TranslateRemotePathToLocal(fileInfo.FullName, remotePath, ModFileLocation);
 
-                        if (fileInfo.IsDirectory)
-                        {
+                        if (fileInfo.IsDirectory) {
                             // Create local subdirectory, if it does not exist yet
                             if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
                             continue;
                         }
 
-                        if (!CurrentModList.Contains(fileInfo.Name)
-                            && MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
-                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-                        {
+                        if (!CurrentModList.Contains(fileInfo.Name) && MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
+                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes) {
                             Toast.Dispatcher.Invoke(() =>
                             Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
                             // Download file
@@ -193,8 +180,7 @@ namespace MCModGetter
                                 session.GetFiles(remoteFilePath, localFilePath);
 
                             // Did the download succeeded?
-                            if (!transferResult.IsSuccess)
-                            {
+                            if (!transferResult.IsSuccess) {
                                 // Print error (but continue with other files)
                                 Toast.Dispatcher.Invoke(()=>
                                 Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
@@ -249,6 +235,32 @@ namespace MCModGetter
             btnUpdateMods.IsEnabled = false;
             progbarUpdateMods.Visibility = Visibility.Visible;
             await Task.Factory.StartNew(() => ProbeFiles());
+        }
+
+        private void WndMain_Loaded(object sender, RoutedEventArgs e)
+        {
+            //NOTE: Any preint
+        }
+
+        private void BtnAddMod_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog() {
+                 CheckFileExists = true,
+                  Filter = "MC Mod Files (*.jar)|*.jar|All files (*.*)|*.*",
+                  InitialDirectory = $@"C:\Users\{Environment.UserName}\Downloads\",
+                   Title = "Add new Minecraft Mods...",
+                    Multiselect = true
+            };
+
+            ofd.ShowDialog();
+
+            if (ofd.FileNames == null) return;
+
+            foreach (string file in ofd.FileNames)
+            {
+                CurrentModList.Add(file.Substring(file.LastIndexOf('\\') + 1));
+                File.Copy(file, ModFileLocation + file.Substring(file.LastIndexOf('\\') + 1));
+            }
         }
     }
 }

@@ -1,7 +1,13 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
-  <Profiles>
-    <Profile Name="(Default)" />
-  </Profiles>
-  <Settings />
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="MCModGetter.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="Uname" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">	
+jayw685@gmail.com.5215</Value>
+    </Setting>
+    <Setting Name="Pass" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">pt2T0gy68E</Value>
+    </Setting>
+  </Settings>
 </SettingsFile>
