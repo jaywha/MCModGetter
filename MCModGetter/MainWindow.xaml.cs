@@ -245,8 +245,6 @@ namespace MCModGetter
             Toast.MessageQueue.Enqueue($"Successfully deleted the following mod: {modName}");
         }
 
-        private async void WndMain_Loaded(object sender, RoutedEventArgs e) => await Task.Factory.StartNew(() => ProbeFiles());
-
         private async void btnUpdateMods_Click(object sender, RoutedEventArgs e) {
             btnUpdateMods.IsEnabled = false;
             progbarUpdateMods.Visibility = Visibility.Visible;

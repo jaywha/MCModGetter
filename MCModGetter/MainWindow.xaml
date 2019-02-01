@@ -17,7 +17,7 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         
         x:Name="wndMain"
-        Title="Minecraft Mod Manager" Height="491.949" Width="847.161" Loaded="WndMain_Loaded">
+        Title="Minecraft Mod Manager" Height="491.949" Width="847.161">
     <Window.Resources>
         <Style x:Key="MainButtonStyle" TargetType="Button">
             <Setter Property="Template">
