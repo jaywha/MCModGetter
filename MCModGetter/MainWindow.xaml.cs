@@ -23,6 +23,9 @@ using MojangSharp.Endpoints;
 using MojangSharp.Responses;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
+using WinSCP;
+using System.Configuration;
+using System.Security.Cryptography;
 
 namespace MCModGetter
 {
@@ -54,6 +57,8 @@ namespace MCModGetter
         public MainWindow()
         {
             InitializeComponent();
+            InitializeSessionsOptions();
+
             fileSystemWatcher = new FileSystemWatcher(ModFileLocation, "*.*")
             {
                 EnableRaisingEvents = true,
@@ -65,7 +70,7 @@ namespace MCModGetter
             fileSystemWatcher.Renamed += FileSystemWatcher_FileEvent;
             fileSystemWatcher.Deleted += FileSystemWatcher_FileEvent;
 
-            foreach(string fileName in Directory.EnumerateFiles(ModFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
+            foreach (string fileName in Directory.EnumerateFiles(ModFileLocation,"*.*",SearchOption.AllDirectories).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
             {
                 CurrentModList.Add(fileName);
             }
@@ -116,7 +121,7 @@ namespace MCModGetter
         }
 
         private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) =>
-            Toast.MessageQueue.Enqueue("Work in progress...");        
+            Toast.MessageQueue.Enqueue("Work in progress...");
         #endregion
 
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
@@ -132,7 +137,85 @@ namespace MCModGetter
         }
 
         #region Utilitiy Methods
+        private SessionOptions sessionOptions = new SessionOptions
+        {
+            Protocol = Protocol.Ftp,
+            HostName = "192.99.21.157",
+            UserName = ConfigurationManager.AppSettings["UserName"]
+        };
 
+        private string remotePath = "/mods/";
+
+        public void InitializeSessionsOptions()
+        {
+            string hex = ConfigurationManager.AppSettings["Password"];
+            byte[] bytes =
+                Enumerable.Range(0, hex.Length / 2).
+                    Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
+            byte[] decrypted = ProtectedData.Unprotect(bytes, null, DataProtectionScope.CurrentUser);
+            sessionOptions.Password = Encoding.Unicode.GetString(decrypted);
+        }
+
+        public void ProbeFiles()
+        {
+            try {
+                using (Session session = new Session()) {
+                    // Connect
+                    session.Open(sessionOptions);
+
+                    // Enumerate files and directories to download
+                    IEnumerable<RemoteFileInfo> fileInfos =
+                        session.EnumerateRemoteFiles(
+                            remotePath, null,
+                            EnumerationOptions.EnumerateDirectories |
+                                EnumerationOptions.AllDirectories);
+
+                    foreach (RemoteFileInfo fileInfo in fileInfos.OrderBy(fileInfo => fileInfo.Name))
+                    {
+                        string localFilePath = RemotePath.TranslateRemotePathToLocal(fileInfo.FullName, remotePath, ModFileLocation);
+
+                        if (fileInfo.IsDirectory)
+                        {
+                            // Create local subdirectory, if it does not exist yet
+                            if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
+                            continue;
+                        }
+
+                        if (!CurrentModList.Contains(fileInfo.Name)
+                            && MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
+                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                        {
+                            Toast.Dispatcher.Invoke(() =>
+                            Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
+                            // Download file
+                            string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
+                            TransferOperationResult transferResult =
+                                session.GetFiles(remoteFilePath, localFilePath);
+
+                            // Did the download succeeded?
+                            if (!transferResult.IsSuccess)
+                            {
+                                // Print error (but continue with other files)
+                                Toast.Dispatcher.Invoke(()=>
+                                Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
+                            }
+                        }
+                    }
+                    
+                    Toast.Dispatcher.Invoke(()=>
+                    Toast.MessageQueue.Enqueue("All mods up to date!"));
+                }
+            } catch(Exception e) {
+                Console.WriteLine("Error: {0}", e);
+                return;
+            } finally {
+                wndMain.Dispatcher.Invoke(() =>
+                {
+                    btnUpdateMods.IsEnabled = true;
+                    progbarUpdateMods.Visibility = Visibility.Hidden;
+                });
+            }
+        }    
         #endregion
 
         private async void DialogHost_DialogClosing(object sender, MaterialDesignThemes.Wpf.DialogClosingEventArgs eventArgs)
@@ -160,6 +243,14 @@ namespace MCModGetter
             File.Delete(ModFileLocation + modName);
 
             Toast.MessageQueue.Enqueue($"Successfully deleted the following mod: {modName}");
+        }
+
+        private async void WndMain_Loaded(object sender, RoutedEventArgs e) => await Task.Factory.StartNew(() => ProbeFiles());
+
+        private async void btnUpdateMods_Click(object sender, RoutedEventArgs e) {
+            btnUpdateMods.IsEnabled = false;
+            progbarUpdateMods.Visibility = Visibility.Visible;
+            await Task.Factory.StartNew(() => ProbeFiles());
         }
     }
 }

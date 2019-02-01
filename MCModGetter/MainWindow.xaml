@@ -17,7 +17,7 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         
         x:Name="wndMain"
-        Title="Minecraft Mod Manager" Height="491.949" Width="847.161">
+        Title="Minecraft Mod Manager" Height="491.949" Width="847.161" Loaded="WndMain_Loaded">
     <Window.Resources>
         <Style x:Key="MainButtonStyle" TargetType="Button">
             <Setter Property="Template">
@@ -104,7 +104,8 @@
 
 
             <Image Height="32" VerticalAlignment="Top" Source="Images/main_icon.ico" HorizontalAlignment="Right" Width="32"/>
-            <Button x:Name="btnPlayMinecraft" Content="Start Minecraft" Margin="0,36,0,0" VerticalAlignment="Top" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnPlayMinecraft_Click" FontFamily="Minecrafter" FontWeight="Normal" FontSize="22" Height="52" Foreground="#FF8ACD8D"/>
+            <Button x:Name="btnPlayMinecraft" Content="Start Minecraft" Margin="0,36,0,0" VerticalAlignment="Top" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnPlayMinecraft_Click" 
+                    FontFamily="/MCModGetter;component/Resources/#Minecrafter" FontWeight="Normal" FontSize="22" Height="52" Foreground="#FF8ACD8D"/>
             <Button x:Name="btnDeleteMod" Content="Delete Selected Mod" Margin="0,422,0,10" Width="207" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnDeleteMod_Click" Height="Auto"/>
             <TreeView x:Name="tvMods" Margin="216,36,233,10" Background="LightGray"
                   ItemsSource="{Binding CurrentModList, ElementName=wndMain}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter">
@@ -146,6 +147,8 @@
                 <Label Content="Client Token:" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White"/>
                 <Label x:Name="lblClientToken" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="LimeGreen"/>
             </StackPanel>
+            <Button x:Name="btnUpdateMods" Content="Update Current Mods" HorizontalAlignment="Left" Margin="10,307,0,0" VerticalAlignment="Top" Width="201" Foreground="AntiqueWhite" Click="btnUpdateMods_Click" IsEnabled="False"/>
+            <ProgressBar x:Name="progbarUpdateMods" HorizontalAlignment="Left" Height="64" Margin="77,238,0,0" VerticalAlignment="Top" Width="64" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True"/>
         </Grid>
     </materialDesign:DialogHost>
 </Window>
