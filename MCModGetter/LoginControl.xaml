@@ -20,7 +20,7 @@
         <TextBox x:Name="txtEmail" Height="30" materialDesign:HintAssist.Hint="Minecraft Email or Username" VerticalAlignment="Top" Foreground="White"
                  Text="{Binding ElementName=uccLoginControl, Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="10,42,10,0"/>
         <TextBox x:Name="txtPassword" Height="30" materialDesign:HintAssist.Hint="Password" Margin="10,77,10,0" VerticalAlignment="Top" Foreground="White"
-                 Text="{Binding ElementName=uccLoginControl, Path=Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" KeyDown="TxtPassword_KeyDown"/>
+                 Text="{Binding ElementName=uccLoginControl, Path=Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" KeyDown="TxtPassword_KeyDown" TextChanged="TxtPassword_TextChanged"/>
         <Button x:Name="btnLogin" Content="Login" Margin="10,112,10,0" VerticalAlignment="Top" Height="31" 
                 Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"/>
         <Label Content="Minecraft Login" HorizontalAlignment="Center" HorizontalContentAlignment="Center"

@@ -59,5 +59,10 @@ namespace MCModGetter
                 invokeProv.Invoke();
             }
         }
+
+        private void TxtPassword_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            //TODO: Mask password
+        }
     }
 }
