@@ -147,8 +147,8 @@
                 <Label Content="Client Token:" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White"/>
                 <Label x:Name="lblClientToken" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="LimeGreen"/>
             </StackPanel>
-            <Button x:Name="btnUpdateMods" Content="Update Current Mods" HorizontalAlignment="Left" Margin="10,307,0,0" VerticalAlignment="Top" Width="201" Foreground="AntiqueWhite" Click="btnUpdateMods_Click" IsEnabled="False"/>
-            <ProgressBar x:Name="progbarUpdateMods" HorizontalAlignment="Left" Height="64" Margin="77,238,0,0" VerticalAlignment="Top" Width="64" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True"/>
+            <Button x:Name="btnUpdateMods" Content="Update Current Mods" HorizontalAlignment="Left" Margin="10,307,0,0" VerticalAlignment="Top" Width="201" Foreground="AntiqueWhite" Click="btnUpdateMods_Click" IsEnabled="True"/>
+            <ProgressBar x:Name="progbarUpdateMods" HorizontalAlignment="Left" Height="64" Margin="77,238,0,0" VerticalAlignment="Top" Width="64" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Visibility="Hidden"/>
         </Grid>
     </materialDesign:DialogHost>
 </Window>
