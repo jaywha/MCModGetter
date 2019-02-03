@@ -22,7 +22,7 @@
         <TextBox x:Name="txtPassword" Height="30" materialDesign:HintAssist.Hint="Password" Margin="10,77,10,0" VerticalAlignment="Top" Foreground="White"
                  Text="{Binding ElementName=uccLoginControl, Path=Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" KeyDown="TxtPassword_KeyDown" TextChanged="TxtPassword_TextChanged"/>
         <Button x:Name="btnLogin" Content="Login" Margin="10,112,10,0" VerticalAlignment="Top" Height="31" 
-                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"/>
+                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" CommandParameter="LOGIN"/>
         <Label Content="Minecraft Login" HorizontalAlignment="Center" HorizontalContentAlignment="Center"
                Foreground="White" Margin="10,10,10,0" VerticalAlignment="Top" Width="296" FontFamily="Minecrafter" FontSize="24"/>
     </Grid>

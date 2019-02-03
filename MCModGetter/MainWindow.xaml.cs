@@ -27,6 +27,8 @@ using WinSCP;
 using System.Configuration;
 using System.Security.Cryptography;
 using Microsoft.Win32;
+using MaterialDesignThemes.Wpf;
+using System.Media;
 
 namespace MCModGetter
 {
@@ -53,6 +55,8 @@ namespace MCModGetter
             }
         }
 
+        private string LogDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\MCModGetter-Logs\";
+
         private AuthenticateResponse UserAuthCache;
 
         public MainWindow()
@@ -64,7 +68,7 @@ namespace MCModGetter
             fileSystemWatcher = new FileSystemWatcher(ModFileLocation, "*.*")
             {
                 EnableRaisingEvents = true,
-                IncludeSubdirectories = true
+                IncludeSubdirectories = false
             };
 
             fileSystemWatcher.Created += FileSystemWatcher_FileEvent;
@@ -72,10 +76,12 @@ namespace MCModGetter
             fileSystemWatcher.Renamed += FileSystemWatcher_FileEvent;
             fileSystemWatcher.Deleted += FileSystemWatcher_FileEvent;
 
-            foreach (string fileName in Directory.EnumerateFiles(ModFileLocation, "*.*", SearchOption.AllDirectories).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
+            foreach (string fileName in Directory.EnumerateFiles(ModFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
             {
                 CurrentModList.Add(fileName);
             }
+
+            Directory.CreateDirectory(LogDirectory);
         }
 
         #region FileSystemWatcher & TreeView Events
@@ -117,26 +123,68 @@ namespace MCModGetter
         #endregion
 
         #region Expander Menu Item Clicks
-        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) {
-            IInvokeProvider invokeProv = new ButtonAutomationPeer(btnOpenDialog).GetPattern(PatternInterface.Invoke) as IInvokeProvider;
-            invokeProv.Invoke();
-        }
+        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) => DialogHost.Show(new LoginControl());
 
-        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) =>
-            Toast.MessageQueue.Enqueue("Work in progress...");
+        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) => DialogHost.Show(new SettingsControl() { Width = Width / 1.5, Height = Height / 1.5 });
         #endregion
 
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
 
+        #region Button Clicks
         private void BtnPlayMinecraft_Click(object sender, RoutedEventArgs e) {
-            var p = Process.Start(@"C:\Program Files (x86)\Minecraft\MinecraftLauncher.exe");
             Hide();
-            while (!p.HasExited) { /*spin*/ }
+            var mcLauncher = new Executable(@"C:\Program Files (x86)\Minecraft\MinecraftLauncher.exe")
+            {
+                StandardOutputFileName = LogDirectory + @"\DebugOutput.txt",
+                StandardErrorFileName = LogDirectory + @"\ErrorOutput.txt"
+            };
+            mcLauncher.Run();
             Show();
             BringIntoView();
             Focus();
             Activate();
         }
+
+        private void BtnDeleteMod_Click(object sender, RoutedEventArgs e)
+        {
+            if (tvMods.SelectedItem == null || MessageBox.Show($"Are you sure you want to delete this mod: {tvMods.SelectedValue.ToString()}?",
+                "Delete Mod Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No) return;
+
+            var modName = tvMods.SelectedValue.ToString();
+            File.Delete(ModFileLocation + modName);
+
+            Toast.MessageQueue.Enqueue($"Successfully deleted the following mod: {modName}");
+        }
+
+        private async void btnUpdateMods_Click(object sender, RoutedEventArgs e)
+        {
+            btnUpdateMods.IsEnabled = false;
+            progbarUpdateMods.Visibility = Visibility.Visible;
+            await Task.Factory.StartNew(() => ProbeFiles());
+        }
+
+        private void BtnAddMod_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                CheckFileExists = true,
+                Filter = "MC Mod Files (*.jar)|*.jar|All files (*.*)|*.*",
+                InitialDirectory = $@"C:\Users\{Environment.UserName}\Downloads\",
+                Title = "Add new Minecraft Mods...",
+                Multiselect = true
+            };
+
+            ofd.ShowDialog();
+
+            if (ofd.FileNames == null) return;
+
+            foreach (string file in ofd.FileNames)
+            {
+                CurrentModList.Add(file.Substring(file.LastIndexOf('\\') + 1));
+                File.Copy(file, ModFileLocation + file.Substring(file.LastIndexOf('\\') + 1));
+            }
+        }
+        #endregion
 
         #region Utilitiy Methods
         private SessionOptions sessionOptions = new SessionOptions() {
@@ -170,9 +218,12 @@ namespace MCModGetter
                             continue;
                         }
 
-                        if (!CurrentModList.Contains(fileInfo.Name) && MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
-                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes) {
-                            Toast.Dispatcher.Invoke(() =>
+                        if (!CurrentModList.Contains(fileInfo.Name) /*&& MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
+                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes*/) {
+
+                            
+
+                            /*Toast.Dispatcher.Invoke(() =>
                             Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
                             // Download file
                             string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
@@ -184,12 +235,15 @@ namespace MCModGetter
                                 // Print error (but continue with other files)
                                 Toast.Dispatcher.Invoke(()=>
                                 Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
-                            }
+                            }*/
                         }
                     }
                     
                     Toast.Dispatcher.Invoke(()=>
-                    Toast.MessageQueue.Enqueue("All mods up to date!"));
+                    Toast.MessageQueue.Enqueue("All mods up to date!",
+                    true, 
+                    new Action(() => { }), 
+                    promote: true));
                 }
             } catch(Exception e) {
                 Console.WriteLine("Error: {0}", e);
@@ -201,66 +255,35 @@ namespace MCModGetter
                     progbarUpdateMods.Visibility = Visibility.Hidden;
                 });
             }
-        }    
-        #endregion
+        }
 
         private async void DialogHost_DialogClosing(object sender, MaterialDesignThemes.Wpf.DialogClosingEventArgs eventArgs)
         {
-            AuthenticateResponse auth = await new Authenticate(new Credentials() { Username = Account.Email, Password = Account.Password }).PerformRequestAsync();
-            if (auth.IsSuccess) {
-                UserAuthCache = auth;
-                Console.WriteLine($"AccessToken: {auth.AccessToken}");
-                Console.WriteLine($"ClientToken: {auth.ClientToken}");
-                lblAccessToken.Content = auth.AccessToken;
-                lblClientToken.Content = auth.ClientToken;
-                emiLogin.Label = Account.Email;
-                emiLogin.IsEnabled = false;
-            } else {
-                Toast.MessageQueue.Enqueue("Couldn't login you in. Check your login stuff and try again.");
-            }
-        }
-
-        private void BtnDeleteMod_Click(object sender, RoutedEventArgs e)
-        {
-            if (tvMods.SelectedItem == null || MessageBox.Show($"Are you sure you want to delete this mod: {tvMods.SelectedValue.ToString()}?", 
-                "Delete Mod Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning)==MessageBoxResult.No) return;
-
-            var modName = tvMods.SelectedValue.ToString();
-            File.Delete(ModFileLocation + modName);
-
-            Toast.MessageQueue.Enqueue($"Successfully deleted the following mod: {modName}");
-        }
-
-        private async void btnUpdateMods_Click(object sender, RoutedEventArgs e) {
-            btnUpdateMods.IsEnabled = false;
-            progbarUpdateMods.Visibility = Visibility.Visible;
-            await Task.Factory.StartNew(() => ProbeFiles());
-        }
-
-        private void WndMain_Loaded(object sender, RoutedEventArgs e)
-        {
-            //NOTE: Any preint
-        }
-
-        private void BtnAddMod_Click(object sender, RoutedEventArgs e)
-        {
-            var ofd = new OpenFileDialog() {
-                 CheckFileExists = true,
-                  Filter = "MC Mod Files (*.jar)|*.jar|All files (*.*)|*.*",
-                  InitialDirectory = $@"C:\Users\{Environment.UserName}\Downloads\",
-                   Title = "Add new Minecraft Mods...",
-                    Multiselect = true
-            };
-
-            ofd.ShowDialog();
-
-            if (ofd.FileNames == null) return;
-
-            foreach (string file in ofd.FileNames)
+            if (eventArgs.Parameter != null && eventArgs.Parameter.ToString().Equals("LOGIN"))
             {
-                CurrentModList.Add(file.Substring(file.LastIndexOf('\\') + 1));
-                File.Copy(file, ModFileLocation + file.Substring(file.LastIndexOf('\\') + 1));
+                AuthenticateResponse auth = await new Authenticate(new Credentials() { Username = Account.Email, Password = Account.Password }).PerformRequestAsync();
+                if (auth.IsSuccess)
+                {
+                    UserAuthCache = auth;
+                    Console.WriteLine($"AccessToken: {auth.AccessToken}");
+                    Console.WriteLine($"ClientToken: {auth.ClientToken}");
+                    lblAccessToken.Content = auth.AccessToken;
+                    lblClientToken.Content = auth.ClientToken;
+                    emiLogin.Label = Account.Email;
+                    emiLogin.IsEnabled = false;
+                }
+                else
+                {
+                    Toast.MessageQueue.Enqueue("Couldn't login you in. Check your login stuff and try again.");
+                }
             }
         }
+
+        private void Image_MouseDown(object sender, MouseButtonEventArgs e) => new SoundPlayer(MCModGetter.Properties.Resources.emgei).Play();
+        #endregion
+
+        private void WndMain_Loaded(object sender, RoutedEventArgs e) { /*NOTE: Any preinit*/ }
+
+        
     }
 }

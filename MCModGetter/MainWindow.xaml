@@ -96,18 +96,18 @@
                     <StackPanel Background="#FFE5E5E5">
                         <local:ExpanderMenuItem x:Name="emiLogin" Label="Login" Icon="Images/profile_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                             ExpanderItemClick="ExpanderMenuItem_LoginClick" HorizontalAlignment="Right"/>
-                        <local:ExpanderMenuItem x:Name="emiSettings" Label="Settings" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <local:ExpanderMenuItem x:Name="emiSettings" Label="Configs" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                             ExpanderItemClick="ExpanderMenuItem_SettingsClick" HorizontalAlignment="Right"/>
                     </StackPanel>
                 </Expander>
             </Canvas>
 
 
-            <Image Height="32" VerticalAlignment="Top" Source="Images/main_icon.ico" HorizontalAlignment="Right" Width="32"/>
+            <Image Height="32" VerticalAlignment="Top" Source="Images/main_icon.ico" HorizontalAlignment="Right" Width="32" MouseDown="Image_MouseDown"/>
             <Button x:Name="btnPlayMinecraft" Content="Start Minecraft" Margin="0,36,0,0" VerticalAlignment="Top" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnPlayMinecraft_Click" 
                     FontFamily="/MCModGetter;component/Resources/#Minecrafter" FontWeight="Normal" FontSize="22" Height="52" Foreground="#FF8ACD8D"/>
-            <Button x:Name="btnAddMod" Content="Add Mod(s)..." Margin="0,0,0,228" Width="207" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnAddMod_Click" Height="30" VerticalAlignment="Bottom"/>
-            <Button x:Name="btnDeleteMod" Content="Delete Selected Mod" Margin="0,0,0,10" Width="207" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnDeleteMod_Click" Height="30" VerticalAlignment="Bottom"/>
+            <Button x:Name="btnAddMod" Content="Add Mod(s)..." Margin="0,0,0,228" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnAddMod_Click" Height="30" VerticalAlignment="Bottom"/>
+            <Button x:Name="btnDeleteMod" Content="Delete Selected Mod" Margin="0,0,0,10" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnDeleteMod_Click" Height="30" VerticalAlignment="Bottom"/>
             <TreeView x:Name="tvMods" Margin="216,36,233,10" Background="LightGray"
                   ItemsSource="{Binding CurrentModList, ElementName=wndMain}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter">
                 <TreeView.Resources>
@@ -141,7 +141,6 @@
                ToolTip="Double click to go to Mods folder."
                MouseDoubleClick="Label_MouseDoubleClick"/>
             <materialDesign:Snackbar x:Name="Toast" Height="80" Margin="216,0,233,8" HorizontalAlignment="Stretch" MessageQueue="{materialDesign:MessageQueue}"/>
-            <Button x:Name="btnOpenDialog" Content="Button" HorizontalAlignment="Left" Margin="54,422,0,0" VerticalAlignment="Top" Width="75" Visibility="Hidden" Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"/>
             <StackPanel Orientation="Vertical" Margin="10,0,0,10" Height="108" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="201">
                 <Label Content="Access Token:" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White"/>
                 <Label x:Name="lblAccessToken" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="LimeGreen"/>
@@ -149,7 +148,7 @@
                 <Label x:Name="lblClientToken" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="LimeGreen"/>
             </StackPanel>
             <Button x:Name="btnUpdateMods" Content="Update Current Mods" HorizontalAlignment="Left" Margin="10,0,0,123" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnUpdateMods_Click" IsEnabled="True"/>
-            <ProgressBar x:Name="progbarUpdateMods" Height="64" HorizontalAlignment="Center" VerticalAlignment="Center" Width="64" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Visibility="Visible"/>
+            <ProgressBar x:Name="progbarUpdateMods" Height="64" HorizontalAlignment="Center" VerticalAlignment="Center" Width="64" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Visibility="Hidden"/>
         </Grid>
     </materialDesign:DialogHost>
 </Window>
