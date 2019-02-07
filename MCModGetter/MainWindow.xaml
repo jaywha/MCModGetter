@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:MCModGetter"
+        xmlns:uc="clr-namespace:MCModGetter.UserControls"
         mc:Ignorable="d"
         
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -83,7 +84,7 @@
     </Window.Resources>
     <materialDesign:DialogHost DialogClosing="DialogHost_DialogClosing">
         <materialDesign:DialogHost.DialogContent>
-            <local:LoginControl x:Name="Account"/>
+            <uc:LoginControl x:Name="Account"/>
         </materialDesign:DialogHost.DialogContent>
         <Grid Background="#FF303030">
             <Grid.ColumnDefinitions>
@@ -94,9 +95,9 @@
                 Panel.ZIndex="1" Margin="0,0,437,348">
                 <Expander x:Name="expSideMenu" Header="Menu" ExpandDirection="Right" Foreground="White" Margin="0,0,233,0" Background="#FF303030">
                     <StackPanel Background="#FFE5E5E5">
-                        <local:ExpanderMenuItem x:Name="emiLogin" Label="Login" Icon="Images/profile_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <uc:ExpanderMenuItem x:Name="emiLogin" Label="Login" Icon="Images/profile_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                             ExpanderItemClick="ExpanderMenuItem_LoginClick" HorizontalAlignment="Right"/>
-                        <local:ExpanderMenuItem x:Name="emiSettings" Label="Configs" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <uc:ExpanderMenuItem x:Name="emiSettings" Label="Configs" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                             ExpanderItemClick="ExpanderMenuItem_SettingsClick" HorizontalAlignment="Right"/>
                     </StackPanel>
                 </Expander>

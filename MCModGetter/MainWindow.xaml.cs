@@ -29,6 +29,7 @@ using System.Security.Cryptography;
 using Microsoft.Win32;
 using MaterialDesignThemes.Wpf;
 using System.Media;
+using MCModGetter.UserControls;
 
 namespace MCModGetter
 {
@@ -218,12 +219,12 @@ namespace MCModGetter
                             continue;
                         }
 
-                        if (!CurrentModList.Contains(fileInfo.Name) /*&& MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
-                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes*/) {
+                        if (!CurrentModList.Contains(fileInfo.Name) && MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
+                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes) {
 
                             
 
-                            /*Toast.Dispatcher.Invoke(() =>
+                            Toast.Dispatcher.Invoke(() =>
                             Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
                             // Download file
                             string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
@@ -235,7 +236,7 @@ namespace MCModGetter
                                 // Print error (but continue with other files)
                                 Toast.Dispatcher.Invoke(()=>
                                 Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
-                            }*/
+                            }
                         }
                     }
                     
