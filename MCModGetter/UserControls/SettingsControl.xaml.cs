@@ -40,6 +40,17 @@ namespace MCModGetter.UserControls
             }
         }
 
+        private string _previouslyEditedFile;
+        public string PreviouslyEditedFile
+        {
+            get => _previouslyEditedFile;
+            set {
+                _previouslyEditedFile = value;
+                OnPropertyChanged();
+            }
+        }
+
+
         private FileSystemWatcher fileSystemWatcher;
         public ObservableCollection<string> CurrentConfigList { get; private set; } = new ObservableCollection<string>();
 
@@ -84,5 +95,18 @@ namespace MCModGetter.UserControls
         #endregion
 
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(fileName: ConfigFileLocation);
+
+        private void TvConfigs_SelectedItemChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(ConfigEditor.Text)) {
+                File.WriteAllText(ConfigFileLocation + PreviouslyEditedFile, ConfigEditor.Text);
+            }
+
+            if (tvConfigs.SelectedValue != null)
+            {
+                ConfigEditor.Text = File.ReadAllText(ConfigFileLocation + tvConfigs.SelectedValue.ToString());
+                PreviouslyEditedFile = tvConfigs.SelectedValue.ToString();
+            }
+        }
     }
 }

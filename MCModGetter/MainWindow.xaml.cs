@@ -30,6 +30,8 @@ using Microsoft.Win32;
 using MaterialDesignThemes.Wpf;
 using System.Media;
 using MCModGetter.UserControls;
+using Google.Apis.Drive.v3;
+using Google.Apis.Download;
 
 namespace MCModGetter
 {
@@ -52,6 +54,17 @@ namespace MCModGetter
             set
             {
                 _modFileLocation = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private double _googleDriveDownloadProgress;
+        public double GoogleDriveDownloadProgress
+        {
+            get => _googleDriveDownloadProgress;
+            set
+            {
+                _googleDriveDownloadProgress = value;
                 OnPropertyChanged();
             }
         }
@@ -126,15 +139,17 @@ namespace MCModGetter
         #region Expander Menu Item Clicks
         private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) => DialogHost.Show(new LoginControl());
 
-        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) => DialogHost.Show(new SettingsControl() { Width = Width / 1.5, Height = Height / 1.5 });
+        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) => DialogHost.Show(new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 });
         #endregion
 
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
 
         #region Button Clicks
+        private const string MinecraftLauncherDirectory = @"C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe";
+
         private void BtnPlayMinecraft_Click(object sender, RoutedEventArgs e) {
             Hide();
-            var mcLauncher = new Executable(@"C:\Program Files (x86)\Minecraft\MinecraftLauncher.exe")
+            var mcLauncher = new Executable(MinecraftLauncherDirectory)
             {
                 StandardOutputFileName = LogDirectory + @"\DebugOutput.txt",
                 StandardErrorFileName = LogDirectory + @"\ErrorOutput.txt"
@@ -160,7 +175,7 @@ namespace MCModGetter
         private async void btnUpdateMods_Click(object sender, RoutedEventArgs e)
         {
             btnUpdateMods.IsEnabled = false;
-            progbarUpdateMods.Visibility = Visibility.Visible;
+            stkProgress.Visibility = Visibility.Visible;
             await Task.Factory.StartNew(() => ProbeFiles());
         }
 
@@ -188,74 +203,60 @@ namespace MCModGetter
         #endregion
 
         #region Utilitiy Methods
-        private SessionOptions sessionOptions = new SessionOptions() {
+        /*private SessionOptions sessionOptions = new SessionOptions() {
             Protocol = Protocol.Ftp,
             HostName = "192.99.21.157",
             UserName = "jayw685@gmail.com.5215",
             Password = "pt2T0gy68E"
         };
-
-        private string remotePath = "/mods/";
+        */
+        private readonly DriveService driveService = new DriveService();
+        const string DWNLD_PATH = @"C:\Users\<USER>\Downloads\mods.zip";
 
         public void ProbeFiles() {
-            try {
-                using (Session session = new Session()) {
-                    // Connect
-                    session.Open(sessionOptions);
+            var fileId = "1b80SEXhabIKxH2wPjHx3_uJnuyYl7dDF";
+            var request = driveService.Files.Get(fileId);
+            var stream = new MemoryStream();
+            var filePath = DWNLD_PATH.Replace("<USER>", Environment.UserName);
 
-                    // Enumerate files and directories to download
-                    IEnumerable<RemoteFileInfo> fileInfos =
-                        session.EnumerateRemoteFiles(
-                            remotePath, null,
-                            EnumerationOptions.EnumerateDirectories |
-                                EnumerationOptions.AllDirectories);
-
-                    foreach (RemoteFileInfo fileInfo in fileInfos.OrderBy(fileInfo => fileInfo.Name)) {
-                        string localFilePath = RemotePath.TranslateRemotePathToLocal(fileInfo.FullName, remotePath, ModFileLocation);
-
-                        if (fileInfo.IsDirectory) {
-                            // Create local subdirectory, if it does not exist yet
-                            if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
-                            continue;
-                        }
-
-                        if (!CurrentModList.Contains(fileInfo.Name) && MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
-                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes) {
-
-                            
-
-                            Toast.Dispatcher.Invoke(() =>
-                            Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
-                            // Download file
-                            string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
-                            TransferOperationResult transferResult =
-                                session.GetFiles(remoteFilePath, localFilePath);
-
-                            // Did the download succeeded?
-                            if (!transferResult.IsSuccess) {
-                                // Print error (but continue with other files)
-                                Toast.Dispatcher.Invoke(()=>
-                                Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
-                            }
-                        }
-                    }
-                    
-                    Toast.Dispatcher.Invoke(()=>
-                    Toast.MessageQueue.Enqueue("All mods up to date!",
-                    true, 
-                    new Action(() => { }), 
-                    promote: true));
-                }
-            } catch(Exception e) {
-                Console.WriteLine("Error: {0}", e);
-                return;
-            } finally {
-                wndMain.Dispatcher.Invoke(() =>
+            // Add a handler which will be notified on progress changes.
+            // It will notify on each chunk download and when the
+            // download is completed or failed.
+            request.MediaDownloader.ProgressChanged +=
+                (IDownloadProgress progress) =>
                 {
-                    btnUpdateMods.IsEnabled = true;
-                    progbarUpdateMods.Visibility = Visibility.Hidden;
-                });
-            }
+                    switch (progress.Status)
+                    {
+                        case DownloadStatus.Downloading:
+                            {
+                                GoogleDriveDownloadProgress = progress.BytesDownloaded;
+                                break;
+                            }
+                        case DownloadStatus.Completed:
+                            {
+                                Console.WriteLine("Download complete.");
+                                btnUpdateMods.Dispatcher.Invoke(() => btnUpdateMods.IsEnabled = true);
+                                stkProgress.Dispatcher.Invoke(()=>stkProgress.Visibility = Visibility.Collapsed);
+
+                                using (var fs = new FileStream(filePath, FileMode.OpenOrCreate))
+                                {
+                                    stream.CopyTo(fs);
+                                }
+
+                                Process.Start(filePath.Substring(0, filePath.LastIndexOf("\\")));
+                                break;
+                            }
+                        case DownloadStatus.Failed:
+                            {
+                                Console.WriteLine("Download failed.");
+
+                                btnUpdateMods.Dispatcher.Invoke(() => btnUpdateMods.IsEnabled = true);
+                                stkProgress.Dispatcher.Invoke(()=>stkProgress.Visibility = Visibility.Collapsed);
+                                break;
+                            }
+                    }
+                };
+            request.Download(stream);
         }
 
         private async void DialogHost_DialogClosing(object sender, MaterialDesignThemes.Wpf.DialogClosingEventArgs eventArgs)
