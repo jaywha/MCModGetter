@@ -40,10 +40,13 @@ namespace MCModGetter
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        #region PropertyChanged Implementation
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string propName = "")
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        #endregion
 
+        #region Properties
         private FileSystemWatcher fileSystemWatcher;
         public ObservableCollection<string> CurrentModList { get; private set; } = new ObservableCollection<string>();
 
@@ -73,6 +76,9 @@ namespace MCModGetter
 
         private AuthenticateResponse UserAuthCache;
 
+        private readonly SettingsControl settings;
+        #endregion
+
         public MainWindow()
         {
             InitializeComponent();
@@ -96,6 +102,19 @@ namespace MCModGetter
             }
 
             Directory.CreateDirectory(LogDirectory);
+
+            settings = new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 };
+        }
+
+        private void WndMain_Loaded(object sender, RoutedEventArgs e) { /*NOTE: Any preinit*/ }
+
+        private void WndMain_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if(dlghostMain.IsOpen)
+            {
+                settings.Width = ActualWidth - 100.0;
+                settings.Height = ActualHeight - 100.0;
+            }
         }
 
         #region FileSystemWatcher & TreeView Events
@@ -134,31 +153,34 @@ namespace MCModGetter
             }
         }
 
+         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
         #endregion
 
         #region Expander Menu Item Clicks
-        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) => DialogHost.Show(new LoginControl());
+        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) {
+            DialogHost.Show(new LoginControl());
+            expSideMenu.IsExpanded = false;
+        }
 
-        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) => DialogHost.Show(new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 });
+        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) {
+            DialogHost.Show(settings);
+            expSideMenu.IsExpanded = false;
+        }
         #endregion
-
-        private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
 
         #region Button Clicks
         private const string MinecraftLauncherDirectory = @"C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe";
 
         private void BtnPlayMinecraft_Click(object sender, RoutedEventArgs e) {
             Hide();
-            var mcLauncher = new Executable(MinecraftLauncherDirectory)
-            {
-                StandardOutputFileName = LogDirectory + @"\DebugOutput.txt",
-                StandardErrorFileName = LogDirectory + @"\ErrorOutput.txt"
+            var p = Process.Start(MinecraftLauncherDirectory);
+            p.Exited += delegate {
+                Show();
+                BringIntoView();
+                Focus();
+                Activate();
             };
-            mcLauncher.Run();
-            Show();
-            BringIntoView();
-            Focus();
-            Activate();
+            p.WaitForExit();
         }
 
         private void BtnDeleteMod_Click(object sender, RoutedEventArgs e)
@@ -214,6 +236,7 @@ namespace MCModGetter
         const string DWNLD_PATH = @"C:\Users\<USER>\Downloads\mods.zip";
 
         public void ProbeFiles() {
+            //TODO: Change to a spreadsheet file coupling list of mods with their downloads.
             var fileId = "1b80SEXhabIKxH2wPjHx3_uJnuyYl7dDF";
             var request = driveService.Files.Get(fileId);
             var stream = new MemoryStream();
@@ -283,9 +306,5 @@ namespace MCModGetter
 
         private void Image_MouseDown(object sender, MouseButtonEventArgs e) => new SoundPlayer(MCModGetter.Properties.Resources.emgei).Play();
         #endregion
-
-        private void WndMain_Loaded(object sender, RoutedEventArgs e) { /*NOTE: Any preinit*/ }
-
-        
     }
 }

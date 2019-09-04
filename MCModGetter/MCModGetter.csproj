@@ -103,7 +103,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Classes\Extensions.cs" />
     <Compile Include="Classes\Mod.cs" />
+    <Compile Include="Classes\ResourceLoader.cs" />
     <Compile Include="UserControls\ModChecklistControl.xaml.cs">
       <DependentUpon>ModChecklistControl.xaml</DependentUpon>
     </Compile>
@@ -169,6 +171,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="Resources\JSONHighlighting.xhsd" />
     <Resource Include="Resources\Minecrafter.Reg.ttf" />
   </ItemGroup>
   <ItemGroup>

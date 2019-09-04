@@ -18,7 +18,8 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         
         x:Name="wndMain"
-        Title="Minecraft Mod Manager" Height="491.949" Width="847.161" Loaded="WndMain_Loaded">
+        Title="Minecraft Mod Manager" Height="491.949" Width="847.161" Loaded="WndMain_Loaded" SizeChanged="WndMain_SizeChanged"
+        >
     <Window.Resources>
         <Style x:Key="MainButtonStyle" TargetType="Button">
             <Setter Property="Template">
@@ -82,7 +83,7 @@
         </Style>
 
     </Window.Resources>
-    <materialDesign:DialogHost DialogClosing="DialogHost_DialogClosing" CloseOnClickAway="True">
+    <materialDesign:DialogHost x:Name="dlghostMain" DialogClosing="DialogHost_DialogClosing" CloseOnClickAway="True">
         <materialDesign:DialogHost.DialogContent>
             <uc:LoginControl x:Name="Account"/>
         </materialDesign:DialogHost.DialogContent>

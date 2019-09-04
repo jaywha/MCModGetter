@@ -24,10 +24,10 @@
                FontStyle="Italic"
                ToolTip="Double click to go to configs folder."
                MouseDoubleClick="Label_MouseDoubleClick"/>
-        <ListView x:Name="tvConfigs" HorizontalAlignment="Left" Width="150.0"
-                  Background="WhiteSmoke"
-                  ItemsSource="{Binding CurrentConfigList, ElementName=uccSettingsControl}" SelectionChanged="TvConfigs_SelectedItemChanged">            
-        </ListView>
+            <TreeView x:Name="tvConfigs" HorizontalAlignment="Left" Width="150.0"
+                  Foreground="WhiteSmoke"
+                  SelectedItemChanged="TvConfigs_SelectedItemChanged"
+                  ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
         </StackPanel>
         <DockPanel DockPanel.Dock="Right" HorizontalAlignment="Stretch">
             <Label x:Name="lblCurrentFile" DockPanel.Dock="Top"
@@ -39,9 +39,8 @@
                    Foreground="AntiqueWhite" HorizontalAlignment="Left"/>
             <ae:TextEditor x:Name="ConfigEditor"
                        FontFamily="Consolas"
-                       SyntaxHighlighting="JSON"
-                       FontSize="12pt" LineNumbersForeground="#FF204F87" Foreground="#FF2FD10B" Background="Black"
-                        DockPanel.Dock="Bottom"
+                       FontSize="12pt"
+                       DockPanel.Dock="Bottom"
             />
         </DockPanel>
     </DockPanel>
