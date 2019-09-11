@@ -25,21 +25,14 @@ namespace MCModGetter.Classes
         private static TreeViewItem CreateDirectoryNode(this TreeView treeView, DirectoryInfo directoryInfo)
         {
             TreeViewItem result = null;
-            var work = new Thread(() =>
-            {
+            var directoryNode = new TreeViewItem { Header = directoryInfo.Name };
+            foreach (var directory in directoryInfo.GetDirectories())
+                directoryNode.Dispatcher.Invoke(()=>directoryNode.Items.Add(treeView.Dispatcher.Invoke(()=>treeView.CreateDirectoryNode(directory))));
 
-                var directoryNode = new TreeViewItem { Header = directoryInfo.Name };
-                foreach (var directory in directoryInfo.GetDirectories())
-                    directoryNode.Items.Add(treeView.CreateDirectoryNode(directory));
+            foreach (var file in directoryInfo.GetFiles())
+                directoryNode.Dispatcher.Invoke(()=>directoryNode.Items.Add(new TreeViewItem { Header = file.Name }));
 
-                foreach (var file in directoryInfo.GetFiles())
-                    directoryNode.Items.Add(new TreeViewItem { Header = file.Name });
-
-                result = directoryNode;
-            });
-            work.SetApartmentState(ApartmentState.STA);
-            work.Start();
-            work.Join(3000);
+            result = directoryNode;
             return result;
         }
 

@@ -32,6 +32,10 @@ using System.Media;
 using MCModGetter.UserControls;
 using Google.Apis.Drive.v3;
 using Google.Apis.Download;
+using Google.Apis.Services;
+using Google.Apis.Auth.OAuth2;
+using System.Threading;
+using Google.Apis.Util.Store;
 
 namespace MCModGetter
 {
@@ -77,6 +81,8 @@ namespace MCModGetter
         private AuthenticateResponse UserAuthCache;
 
         private readonly SettingsControl settings;
+        private static UserCredential Credential;
+
         #endregion
 
         public MainWindow()
@@ -84,6 +90,23 @@ namespace MCModGetter
             InitializeComponent();
             Hide();
             Show();
+
+            #region Google Drive API Pre-Init
+            using (var stream =
+                new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
+            {
+                // The file token.json stores the user's access and refresh tokens, and is created
+                // automatically when the authorization flow completes for the first time.
+                string credPath = "token.json";
+                Credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    new string[] { DriveService.Scope.DriveReadonly },
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(credPath, true)).Result;
+                Console.WriteLine("Credential file saved to: " + credPath);
+            }
+            #endregion
 
             fileSystemWatcher = new FileSystemWatcher(ModFileLocation, "*.*")
             {
@@ -225,22 +248,30 @@ namespace MCModGetter
         #endregion
 
         #region Utilitiy Methods
-        /*private SessionOptions sessionOptions = new SessionOptions() {
+        [Obsolete("Old FTP method. not currently in use.")]
+        private SessionOptions sessionOptions = new SessionOptions()
+        {
             Protocol = Protocol.Ftp,
             HostName = "192.99.21.157",
             UserName = "jayw685@gmail.com.5215",
             Password = "pt2T0gy68E"
         };
-        */
-        private readonly DriveService driveService = new DriveService();
-        const string DWNLD_PATH = @"C:\Users\<USER>\Downloads\mods.zip";
 
-        public void ProbeFiles() {
-            //TODO: Change to a spreadsheet file coupling list of mods with their downloads.
-            var fileId = "1b80SEXhabIKxH2wPjHx3_uJnuyYl7dDF";
-            var request = driveService.Files.Get(fileId);
+        private static readonly BaseClientService.Initializer DriveServiceInit = new BaseClientService.Initializer()
+        {
+            ApiKey = "AIzaSyDo1fRXMAMHrFaXlazsFQ-VkYBM8BVKrEI",
+            HttpClientInitializer = Credential,
+            ApplicationName = AppDomain.CurrentDomain.FriendlyName
+        };
+        private readonly DriveService driveService = new DriveService(DriveServiceInit);
+        private readonly string DWNLD_PATH = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\mods.xlsx";
+
+        public void ProbeFiles()
+        {
+            var fileId = "1ecUF8Wb_EgJTXfRqwjIuirIX5jN4F7HOfeB87fZk-Q4";
+            var request = driveService.Files.Export(fileId, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             var stream = new MemoryStream();
-            var filePath = DWNLD_PATH.Replace("<USER>", Environment.UserName);
+            progbarUpdateMods.Dispatcher.Invoke(() => progbarUpdateMods.Visibility = Visibility.Visible);
 
             // Add a handler which will be notified on progress changes.
             // It will notify on each chunk download and when the
@@ -259,22 +290,42 @@ namespace MCModGetter
                             {
                                 Console.WriteLine("Download complete.");
                                 btnUpdateMods.Dispatcher.Invoke(() => btnUpdateMods.IsEnabled = true);
-                                stkProgress.Dispatcher.Invoke(()=>stkProgress.Visibility = Visibility.Collapsed);
+                                stkProgress.Dispatcher.Invoke(() => stkProgress.Visibility = Visibility.Collapsed);
 
-                                using (var fs = new FileStream(filePath, FileMode.OpenOrCreate))
+                                using (var fs = new FileStream(DWNLD_PATH, FileMode.OpenOrCreate))
                                 {
-                                    stream.CopyTo(fs);
-                                }
+                                    stream.WriteTo(fs);
 
-                                Process.Start(filePath.Substring(0, filePath.LastIndexOf("\\")));
+                                    using (var reader = ExcelDataReader.ExcelReaderFactory.CreateReader(fs))
+                                    {
+                                        reader.Read(); // skip the headers
+
+                                        Console.WriteLine(">>\nCurrent Mod List Data {");
+                                        while (reader.Read()
+                                        && !string.IsNullOrWhiteSpace(reader.GetString(0)))
+                                        {
+                                            var name = reader.GetString(0);
+                                            var link = reader.GetString(1);
+
+                                            Console.WriteLine($"\t\"{name}\" : {link}");
+                                        }
+                                        Console.WriteLine("}\n<<");
+                                    }
+
+                                    File.Delete(DWNLD_PATH);
+                                }
+                                progbarUpdateMods.Dispatcher.Invoke(() => progbarUpdateMods.Visibility = Visibility.Hidden);
                                 break;
                             }
                         case DownloadStatus.Failed:
                             {
                                 Console.WriteLine("Download failed.");
+                                Console.WriteLine($"Progress status details: {progress.Status}");
+                                Console.WriteLine($"Progress status exception: {progress.Exception}");
 
                                 btnUpdateMods.Dispatcher.Invoke(() => btnUpdateMods.IsEnabled = true);
-                                stkProgress.Dispatcher.Invoke(()=>stkProgress.Visibility = Visibility.Collapsed);
+                                stkProgress.Dispatcher.Invoke(() => stkProgress.Visibility = Visibility.Collapsed);
+                                progbarUpdateMods.Dispatcher.Invoke(() => progbarUpdateMods.Visibility = Visibility.Hidden);
                                 break;
                             }
                     }
