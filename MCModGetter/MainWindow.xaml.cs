@@ -44,10 +44,13 @@ namespace MCModGetter
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        #region PropertyChanged Implementation
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string propName = "")
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        #endregion
 
+        #region Properties
         private FileSystemWatcher fileSystemWatcher;
         public ObservableCollection<string> CurrentModList { get; private set; } = new ObservableCollection<string>();
 
@@ -76,10 +79,18 @@ namespace MCModGetter
         private string LogDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\MCModGetter-Logs\";
 
         private AuthenticateResponse UserAuthCache;
+
+        private readonly SettingsControl settings;
         private static UserCredential Credential;
+
+        #endregion
 
         public MainWindow()
         {
+            InitializeComponent();
+            Hide();
+            Show();
+
             #region Google Drive API Pre-Init
             using (var stream =
                 new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
@@ -96,10 +107,6 @@ namespace MCModGetter
                 Console.WriteLine("Credential file saved to: " + credPath);
             }
             #endregion
-
-            InitializeComponent();
-            Hide();
-            Show();
 
             fileSystemWatcher = new FileSystemWatcher(ModFileLocation, "*.*")
             {
@@ -118,6 +125,19 @@ namespace MCModGetter
             }
 
             Directory.CreateDirectory(LogDirectory);
+
+            settings = new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 };
+        }
+
+        private void WndMain_Loaded(object sender, RoutedEventArgs e) { /*NOTE: Any preinit*/ }
+
+        private void WndMain_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if(dlghostMain.IsOpen)
+            {
+                settings.Width = ActualWidth - 100.0;
+                settings.Height = ActualHeight - 100.0;
+            }
         }
 
         #region FileSystemWatcher & TreeView Events
@@ -156,31 +176,34 @@ namespace MCModGetter
             }
         }
 
+         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
         #endregion
 
         #region Expander Menu Item Clicks
-        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) => DialogHost.Show(new LoginControl());
+        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) {
+            DialogHost.Show(new LoginControl());
+            expSideMenu.IsExpanded = false;
+        }
 
-        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) => DialogHost.Show(new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 });
+        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) {
+            DialogHost.Show(settings);
+            expSideMenu.IsExpanded = false;
+        }
         #endregion
-
-        private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
 
         #region Button Clicks
         private const string MinecraftLauncherDirectory = @"C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe";
 
         private void BtnPlayMinecraft_Click(object sender, RoutedEventArgs e) {
             Hide();
-            var mcLauncher = new Executable(MinecraftLauncherDirectory)
-            {
-                StandardOutputFileName = LogDirectory + @"\DebugOutput.txt",
-                StandardErrorFileName = LogDirectory + @"\ErrorOutput.txt"
+            var p = Process.Start(MinecraftLauncherDirectory);
+            p.Exited += delegate {
+                Show();
+                BringIntoView();
+                Focus();
+                Activate();
             };
-            mcLauncher.Run();
-            Show();
-            BringIntoView();
-            Focus();
-            Activate();
+            p.WaitForExit();
         }
 
         private void BtnDeleteMod_Click(object sender, RoutedEventArgs e)
@@ -225,103 +248,26 @@ namespace MCModGetter
         #endregion
 
         #region Utilitiy Methods
-        private SessionOptions sessionOptions = new SessionOptions() {
+        [Obsolete("Old FTP method. not currently in use.")]
+        private SessionOptions sessionOptions = new SessionOptions()
+        {
             Protocol = Protocol.Ftp,
-            HostName = "158.69.52.181",
-            UserName = "jayw685@gmail.com.6857",
+            HostName = "192.99.21.157",
+            UserName = "jayw685@gmail.com.5215",
             Password = "pt2T0gy68E"
         };
 
-        private string remotePath = "/mods/";
-
-        public void InitializeSessionsOptions()
+        private static readonly BaseClientService.Initializer DriveServiceInit = new BaseClientService.Initializer()
         {
-            string hex = ConfigurationManager.AppSettings["Password"];
-            byte[] bytes =
-                Enumerable.Range(0, hex.Length / 2).
-                    Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
-            byte[] decrypted = ProtectedData.Unprotect(bytes, null, DataProtectionScope.CurrentUser);
-            sessionOptions.Password = Encoding.Unicode.GetString(decrypted);
-        }
+            ApiKey = "AIzaSyDo1fRXMAMHrFaXlazsFQ-VkYBM8BVKrEI",
+            HttpClientInitializer = Credential,
+            ApplicationName = AppDomain.CurrentDomain.FriendlyName
+        };
+        private readonly DriveService driveService = new DriveService(DriveServiceInit);
+        private readonly string DWNLD_PATH = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\mods.xlsx";
 
         public void ProbeFiles()
         {
-            try
-            {
-                using (Session session = new Session())
-                {
-                    // Connect
-                    session.Open(sessionOptions);
-
-                    // Enumerate files and directories to download
-                    IEnumerable<RemoteFileInfo> fileInfos =
-                        session.EnumerateRemoteFiles(
-                            remotePath, null,
-                            EnumerationOptions.EnumerateDirectories |
-                                EnumerationOptions.AllDirectories);
-
-                    foreach (RemoteFileInfo fileInfo in fileInfos.OrderBy(fileInfo => fileInfo.Name))
-                    {
-                        string localFilePath = RemotePath.TranslateRemotePathToLocal(fileInfo.FullName, remotePath, ModFileLocation);
-
-                        if (fileInfo.IsDirectory)
-                        {
-                            // Create local subdirectory, if it does not exist yet
-                            if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
-                            continue;
-                        }
-
-                        if (!CurrentModList.Contains(fileInfo.Name)
-                            && MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
-                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-                        {
-                            Toast.Dispatcher.Invoke(() =>
-                            Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
-                            // Download file
-                            string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
-                            TransferOperationResult transferResult =
-                                session.GetFiles(remoteFilePath, localFilePath);
-
-                            // Did the download succeeded?
-                            if (!transferResult.IsSuccess)
-                            {
-                                // Print error (but continue with other files)
-                                Toast.Dispatcher.Invoke(() =>
-                                Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
-                            }
-                        }
-                    }
-
-                    Toast.Dispatcher.Invoke(
-                        () => Toast.MessageQueue.Enqueue("All mods up to date!")
-                    );
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error: {0}", e);
-                return;
-            }
-            finally
-            {
-                wndMain.Dispatcher.Invoke(() =>
-                {
-                    btnUpdateMods.IsEnabled = true;
-                    progbarUpdateMods.Visibility = Visibility.Hidden;
-                });
-            }
-        }
-
-        #region Google Drive Connection
-        /**private static readonly BaseClientService.Initializer DriveServiceInit = new BaseClientService.Initializer() {
-             ApiKey = "AIzaSyDo1fRXMAMHrFaXlazsFQ-VkYBM8BVKrEI",
-             HttpClientInitializer = Credential,
-             ApplicationName = AppDomain.CurrentDomain.FriendlyName
-        };
-        private readonly DriveService driveService = new DriveService(DriveServiceInit);
-        private readonly string DWNLD_PATH = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)+"\\mods.xlsx";
-
-        public void ProbeFiles() {
             var fileId = "1ecUF8Wb_EgJTXfRqwjIuirIX5jN4F7HOfeB87fZk-Q4";
             var request = driveService.Files.Export(fileId, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             var stream = new MemoryStream();
@@ -344,19 +290,20 @@ namespace MCModGetter
                             {
                                 Console.WriteLine("Download complete.");
                                 btnUpdateMods.Dispatcher.Invoke(() => btnUpdateMods.IsEnabled = true);
-                                stkProgress.Dispatcher.Invoke(()=>stkProgress.Visibility = Visibility.Collapsed);
+                                stkProgress.Dispatcher.Invoke(() => stkProgress.Visibility = Visibility.Collapsed);
 
                                 using (var fs = new FileStream(DWNLD_PATH, FileMode.OpenOrCreate))
                                 {
                                     stream.WriteTo(fs);
 
-                                    using(var reader = ExcelDataReader.ExcelReaderFactory.CreateReader(fs))
+                                    using (var reader = ExcelDataReader.ExcelReaderFactory.CreateReader(fs))
                                     {
                                         reader.Read(); // skip the headers
 
                                         Console.WriteLine(">>\nCurrent Mod List Data {");
-                                        while (reader.Read() 
-                                        && !string.IsNullOrWhiteSpace(reader.GetString(0))) {
+                                        while (reader.Read()
+                                        && !string.IsNullOrWhiteSpace(reader.GetString(0)))
+                                        {
                                             var name = reader.GetString(0);
                                             var link = reader.GetString(1);
 
@@ -377,7 +324,7 @@ namespace MCModGetter
                                 Console.WriteLine($"Progress status exception: {progress.Exception}");
 
                                 btnUpdateMods.Dispatcher.Invoke(() => btnUpdateMods.IsEnabled = true);
-                                stkProgress.Dispatcher.Invoke(()=>stkProgress.Visibility = Visibility.Collapsed);
+                                stkProgress.Dispatcher.Invoke(() => stkProgress.Visibility = Visibility.Collapsed);
                                 progbarUpdateMods.Dispatcher.Invoke(() => progbarUpdateMods.Visibility = Visibility.Hidden);
                                 break;
                             }
@@ -385,8 +332,6 @@ namespace MCModGetter
                 };
             request.Download(stream);
         }
-        **/
-        #endregion
 
         private async void DialogHost_DialogClosing(object sender, MaterialDesignThemes.Wpf.DialogClosingEventArgs eventArgs)
         {
@@ -412,9 +357,5 @@ namespace MCModGetter
 
         private void Image_MouseDown(object sender, MouseButtonEventArgs e) => new SoundPlayer(MCModGetter.Properties.Resources.emgei).Play();
         #endregion
-
-        private void WndMain_Loaded(object sender, RoutedEventArgs e) { /*NOTE: Any preinit*/ }
-
-        
     }
 }

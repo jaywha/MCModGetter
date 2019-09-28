@@ -17,6 +17,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using MCModGetter.Classes;
 
 namespace MCModGetter.UserControls
 {
@@ -52,7 +53,6 @@ namespace MCModGetter.UserControls
 
 
         private FileSystemWatcher fileSystemWatcher;
-        public ObservableCollection<string> CurrentConfigList { get; private set; } = new ObservableCollection<string>();
 
         public SettingsControl()
         {
@@ -69,10 +69,9 @@ namespace MCModGetter.UserControls
             fileSystemWatcher.Renamed += FileSystemWatcher_FileEvent;
             fileSystemWatcher.Deleted += FileSystemWatcher_FileEvent;
 
-            foreach (string fileName in Directory.EnumerateFiles(ConfigFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
-            {
-                CurrentConfigList.Add(fileName);
-            }
+            tvConfigs.ListDirectory(ConfigFileLocation);
+
+            ConfigEditor.SyntaxHighlighting = ResourceLoader.LoadHighlightingDefinition(Properties.Resources.JSONHighlighting);
         }
 
         #region FileSystemWatcher & TreeView Events
@@ -81,24 +80,18 @@ namespace MCModGetter.UserControls
             Task.Factory.StartNew(() => {
                 tvConfigs.Dispatcher.Invoke(() =>
                 {
-                    CurrentConfigList.Clear();
-                    foreach (string fileName in Directory.EnumerateFiles(ConfigFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
-                    {
-                        CurrentConfigList.Add(fileName);
-                    }
+                    tvConfigs.ListDirectory(ConfigFileLocation);
                 }, System.Windows.Threading.DispatcherPriority.Background);
             });
         }
-
-
-
         #endregion
 
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(fileName: ConfigFileLocation);
 
-        private void TvConfigs_SelectedItemChanged(object sender, SelectionChangedEventArgs e)
+        private void TvConfigs_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (!string.IsNullOrEmpty(ConfigEditor.Text)) {
+            if (!string.IsNullOrEmpty(ConfigEditor.Text))
+            {
                 File.WriteAllText(ConfigFileLocation + PreviouslyEditedFile, ConfigEditor.Text);
             }
 
