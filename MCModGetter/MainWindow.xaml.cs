@@ -225,15 +225,95 @@ namespace MCModGetter
         #endregion
 
         #region Utilitiy Methods
-        [Obsolete("Old FTP method. not currently in use.")]
         private SessionOptions sessionOptions = new SessionOptions() {
             Protocol = Protocol.Ftp,
-            HostName = "192.99.21.157",
-            UserName = "jayw685@gmail.com.5215",
+            HostName = "158.69.52.181",
+            UserName = "jayw685@gmail.com.6857",
             Password = "pt2T0gy68E"
         };
 
-        private static readonly BaseClientService.Initializer DriveServiceInit = new BaseClientService.Initializer() {
+        private string remotePath = "/mods/";
+
+        public void InitializeSessionsOptions()
+        {
+            string hex = ConfigurationManager.AppSettings["Password"];
+            byte[] bytes =
+                Enumerable.Range(0, hex.Length / 2).
+                    Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
+            byte[] decrypted = ProtectedData.Unprotect(bytes, null, DataProtectionScope.CurrentUser);
+            sessionOptions.Password = Encoding.Unicode.GetString(decrypted);
+        }
+
+        public void ProbeFiles()
+        {
+            try
+            {
+                using (Session session = new Session())
+                {
+                    // Connect
+                    session.Open(sessionOptions);
+
+                    // Enumerate files and directories to download
+                    IEnumerable<RemoteFileInfo> fileInfos =
+                        session.EnumerateRemoteFiles(
+                            remotePath, null,
+                            EnumerationOptions.EnumerateDirectories |
+                                EnumerationOptions.AllDirectories);
+
+                    foreach (RemoteFileInfo fileInfo in fileInfos.OrderBy(fileInfo => fileInfo.Name))
+                    {
+                        string localFilePath = RemotePath.TranslateRemotePathToLocal(fileInfo.FullName, remotePath, ModFileLocation);
+
+                        if (fileInfo.IsDirectory)
+                        {
+                            // Create local subdirectory, if it does not exist yet
+                            if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
+                            continue;
+                        }
+
+                        if (!CurrentModList.Contains(fileInfo.Name)
+                            && MessageBox.Show($"Missing mod detected from server {fileInfo.Name}!\nWant to download it?", "Download Missing Mod?",
+                            MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                        {
+                            Toast.Dispatcher.Invoke(() =>
+                            Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
+                            // Download file
+                            string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
+                            TransferOperationResult transferResult =
+                                session.GetFiles(remoteFilePath, localFilePath);
+
+                            // Did the download succeeded?
+                            if (!transferResult.IsSuccess)
+                            {
+                                // Print error (but continue with other files)
+                                Toast.Dispatcher.Invoke(() =>
+                                Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
+                            }
+                        }
+                    }
+
+                    Toast.Dispatcher.Invoke(
+                        () => Toast.MessageQueue.Enqueue("All mods up to date!")
+                    );
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: {0}", e);
+                return;
+            }
+            finally
+            {
+                wndMain.Dispatcher.Invoke(() =>
+                {
+                    btnUpdateMods.IsEnabled = true;
+                    progbarUpdateMods.Visibility = Visibility.Hidden;
+                });
+            }
+        }
+
+        #region Google Drive Connection
+        /**private static readonly BaseClientService.Initializer DriveServiceInit = new BaseClientService.Initializer() {
              ApiKey = "AIzaSyDo1fRXMAMHrFaXlazsFQ-VkYBM8BVKrEI",
              HttpClientInitializer = Credential,
              ApplicationName = AppDomain.CurrentDomain.FriendlyName
@@ -305,6 +385,8 @@ namespace MCModGetter
                 };
             request.Download(stream);
         }
+        **/
+        #endregion
 
         private async void DialogHost_DialogClosing(object sender, MaterialDesignThemes.Wpf.DialogClosingEventArgs eventArgs)
         {
