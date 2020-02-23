@@ -45,7 +45,8 @@ namespace MCModGetter.UserControls
         public string PreviouslyEditedFile
         {
             get => _previouslyEditedFile;
-            set {
+            set
+            {
                 _previouslyEditedFile = value;
                 OnPropertyChanged();
             }
@@ -77,10 +78,12 @@ namespace MCModGetter.UserControls
         #region FileSystemWatcher & TreeView Events
         private void FileSystemWatcher_FileEvent(object sender, FileSystemEventArgs e)
         {
-            Task.Factory.StartNew(() => {
+            Task.Factory.StartNew(() =>
+            {
                 tvConfigs.Dispatcher.Invoke(() =>
                 {
                     tvConfigs.ListDirectory(ConfigFileLocation);
+                    (tvConfigs.Items[0] as TreeViewItem).IsExpanded = true;
                 }, System.Windows.Threading.DispatcherPriority.Background);
             });
         }
@@ -90,15 +93,44 @@ namespace MCModGetter.UserControls
 
         private void TvConfigs_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (!string.IsNullOrEmpty(ConfigEditor.Text))
+            try
             {
-                File.WriteAllText(ConfigFileLocation + PreviouslyEditedFile, ConfigEditor.Text);
-            }
+                if (tvConfigs.SelectedValue is TreeViewItem item)
+                {
+                    var loc = ConfigFileLocation;
+                    var configFileName = item.Header.ToString();
+                    var parentItem = item.Parent as TreeViewItem;
+                    void GetFullPath()
+                    {
+                        var nodePath = "";
+                        while (parentItem != null && parentItem.Header != null && !parentItem.Header.Equals("config"))
+                        {
+                            nodePath = parentItem.Header.ToString() + "\\" + nodePath;
+                            parentItem = parentItem.Parent as TreeViewItem;
+                        }
+                        loc += nodePath + "\\";
+                    }
 
-            if (tvConfigs.SelectedValue != null)
-            {
-                ConfigEditor.Text = File.ReadAllText(ConfigFileLocation + tvConfigs.SelectedValue.ToString());
-                PreviouslyEditedFile = tvConfigs.SelectedValue.ToString();
+                    if (!string.IsNullOrEmpty(ConfigEditor.Text))
+                    {
+                        GetFullPath();
+                        File.WriteAllText(ConfigFileLocation + PreviouslyEditedFile, ConfigEditor.Text);
+                    }
+
+                    if (item.HasItems)
+                    {
+                        item.IsExpanded = !item.IsExpanded;
+                    }
+                    else
+                    {
+                        GetFullPath();
+                        //Console.WriteLine("Read item name as " + configFileName);
+                        ConfigEditor.Text = File.ReadAllText(loc + configFileName);
+                        PreviouslyEditedFile = configFileName;
+                    }
+                }
+            } catch (FileNotFoundException fnfe) {
+                Console.WriteLine($"[ERROR] ==> {fnfe.Message} \n Stack Trace: {fnfe.StackTrace} \n");
             }
         }
     }

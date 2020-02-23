@@ -16,20 +16,31 @@
             TextOptions.TextRenderingMode="Auto"        
             Background="{DynamicResource MaterialDesignPaper}"
             FontFamily="{DynamicResource MaterialDesignFont}" Height="354.051" Width="541.937">
-    <DockPanel Background="#FF303030" DockPanel.Dock="Left">
-        <StackPanel Orientation="Vertical">
-        <Label Content="Current Configurations:" Foreground="DarkCyan"
-               FontSize="11"
-               FontWeight="DemiBold"
-               FontStyle="Italic"
-               ToolTip="Double click to go to configs folder."
-               MouseDoubleClick="Label_MouseDoubleClick"/>
-            <TreeView x:Name="tvConfigs" HorizontalAlignment="Left" Width="150.0"
-                  Foreground="WhiteSmoke"
-                  SelectedItemChanged="TvConfigs_SelectedItemChanged"
-                  ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-        </StackPanel>
-        <DockPanel DockPanel.Dock="Right" HorizontalAlignment="Stretch">
+    <Grid Background="#FF303030">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="30*"/>
+            <ColumnDefinition Width="70*"/>
+        </Grid.ColumnDefinitions>
+        <DockPanel Grid.Column="0">
+                <Label x:Name="lblCurrentConfigurations"
+                DockPanel.Dock="Top"
+                Content="Current Configurations:"
+                Foreground="DarkCyan"
+                FontSize="11"
+                FontWeight="DemiBold"
+                FontStyle="Italic"
+                ToolTip="Double click to go to configs folder."
+                MouseDoubleClick="Label_MouseDoubleClick"/>
+                <TreeView x:Name="tvConfigs"
+                        DockPanel.Dock="Bottom"
+                        Foreground="WhiteSmoke"
+                        SelectedItemChanged="TvConfigs_SelectedItemChanged"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        ScrollViewer.CanContentScroll="True" 
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+        </DockPanel>
+        <DockPanel HorizontalAlignment="Stretch" Grid.Column="1">
             <Label x:Name="lblCurrentFile" DockPanel.Dock="Top"
                    Content="{Binding ElementName=uccSettingsControl, Path=PreviouslyEditedFile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
                 StringFormat={}Current File: {0}, FallbackValue={}Current File:}"
@@ -40,8 +51,8 @@
             <ae:TextEditor x:Name="ConfigEditor"
                        FontFamily="Consolas"
                        FontSize="12pt"
-                       DockPanel.Dock="Bottom"
+                       DockPanel.Dock="Bottom"                           
             />
         </DockPanel>
-    </DockPanel>
+    </Grid>
 </UserControl>

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace MCModGetter.Classes
@@ -36,6 +37,15 @@ namespace MCModGetter.Classes
             return result;
         }
 
-
+        [STAThread]
+        public static void CenterWindowOnScreen(this Window wnd)
+        {
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+            double screenHeight = SystemParameters.PrimaryScreenHeight;
+            double windowWidth = wnd.Width;
+            double windowHeight = wnd.Height;
+            wnd.Left = (screenWidth / 2) - (windowWidth / 2);
+            wnd.Top = (screenHeight / 2) - (windowHeight / 2);
+        }
     }
 }

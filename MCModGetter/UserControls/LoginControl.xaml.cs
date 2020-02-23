@@ -53,16 +53,12 @@ namespace MCModGetter.UserControls
 
         private void TxtPassword_KeyDown(object sender, KeyEventArgs e)
         {
+            Password = txtPassword.Password;
             if(e.Key.Equals(Key.Enter))
             {
                 IInvokeProvider invokeProv = new ButtonAutomationPeer(btnLogin).GetPattern(PatternInterface.Invoke) as IInvokeProvider;
                 invokeProv.Invoke();
             }
-        }
-
-        private void TxtPassword_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            //TODO: Mask password
         }
     }
 }

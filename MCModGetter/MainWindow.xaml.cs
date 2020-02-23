@@ -36,6 +36,8 @@ using Google.Apis.Services;
 using Google.Apis.Auth.OAuth2;
 using System.Threading;
 using Google.Apis.Util.Store;
+using MCModGetter.Classes;
+using MojangSharp;
 
 namespace MCModGetter
 {
@@ -140,6 +142,14 @@ namespace MCModGetter
             }
         }
 
+        private void wndMain_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Visual visual = e.OriginalSource as Visual;
+
+            if (!visual.IsDescendantOf(expSideMenu))
+                expSideMenu.IsExpanded = false;
+        }
+
         #region FileSystemWatcher & TreeView Events
         private void FileSystemWatcher_FileEvent(object sender, FileSystemEventArgs e)
         {
@@ -185,8 +195,21 @@ namespace MCModGetter
             expSideMenu.IsExpanded = false;
         }
 
+        private Window settingsWindow;
         private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) {
-            DialogHost.Show(settings);
+            if (settingsWindow != null) {
+                settingsWindow.CenterWindowOnScreen();
+                settingsWindow.Activate();
+            } else {
+                settingsWindow = new Window()
+                {
+                    Title = "Config Settings Window",
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    Content = settings,
+                    WindowStyle = WindowStyle.ToolWindow
+                };
+                settingsWindow.Show();
+            }
             expSideMenu.IsExpanded = false;
         }
         #endregion
@@ -248,7 +271,6 @@ namespace MCModGetter
         #endregion
 
         #region Utilitiy Methods
-        [Obsolete("Old FTP method. not currently in use.")]
         private SessionOptions sessionOptions = new SessionOptions()
         {
             Protocol = Protocol.Ftp,
@@ -257,16 +279,20 @@ namespace MCModGetter
             Password = "pt2T0gy68E"
         };
 
+        [Obsolete("Old Google Drive method. Not in use.")]
         private static readonly BaseClientService.Initializer DriveServiceInit = new BaseClientService.Initializer()
         {
             ApiKey = "AIzaSyDo1fRXMAMHrFaXlazsFQ-VkYBM8BVKrEI",
             HttpClientInitializer = Credential,
             ApplicationName = AppDomain.CurrentDomain.FriendlyName
         };
+        [Obsolete("Old Google Drive method. Not in use.")]
         private readonly DriveService driveService = new DriveService(DriveServiceInit);
+        [Obsolete("Old Google Drive method. Not in use.")]
         private readonly string DWNLD_PATH = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\mods.xlsx";
 
-        public void ProbeFiles()
+        [Obsolete("Old Google Drive method. Not in use.")]
+        public void GetDriveMods()
         {
             var fileId = "1ecUF8Wb_EgJTXfRqwjIuirIX5jN4F7HOfeB87fZk-Q4";
             var request = driveService.Files.Export(fileId, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -333,11 +359,103 @@ namespace MCModGetter
             request.Download(stream);
         }
 
+        private string remotePath = "/mods/";
+
+        public void ProbeFiles()
+        {
+            try
+            {
+                using (Session session = new Session())
+                {
+                    // Connect
+                    session.Open(sessionOptions);
+
+                    // Enumerate files and directories to download
+                    IEnumerable<RemoteFileInfo> fileInfos =
+                        session.EnumerateRemoteFiles(
+                            remotePath, null,
+                            EnumerationOptions.EnumerateDirectories |
+                                EnumerationOptions.AllDirectories);
+
+                    foreach (RemoteFileInfo fileInfo in fileInfos.OrderBy(fileInfo => fileInfo.Name))
+                    {
+                        string localFilePath = RemotePath.TranslateRemotePathToLocal(fileInfo.FullName, remotePath, ModFileLocation);
+
+                        if (fileInfo.IsDirectory)
+                        {
+                            // Create local subdirectory, if it does not exist yet
+                            if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
+                            continue;
+                        }
+
+                        if (!CurrentModList.Contains(fileInfo.Name))
+                        {                            
+                            if (fileInfo.Name.Contains("ChickenASM"))
+                            {
+                                var versionFolder = "1.12.2";
+                                Toast.Dispatcher.Invoke(() =>
+                                Toast.MessageQueue.Enqueue($"Downloading file into {versionFolder}\\{fileInfo.FullName}..."));
+                                // Download file
+                                string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
+                                TransferOperationResult transferResult =
+                                    session.GetFiles(remoteFilePath, localFilePath);
+
+                                // Did the download succeeded?
+                                if (!transferResult.IsSuccess)
+                                {
+                                    // Print error (but continue with other files)
+                                    Toast.Dispatcher.Invoke(() =>
+                                    Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
+                                }
+                            }
+                            else
+                            {
+                                Toast.Dispatcher.Invoke(() =>
+                                Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
+                                // Download file
+                                string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
+                                TransferOperationResult transferResult =
+                                    session.GetFiles(remoteFilePath, localFilePath);
+
+                                // Did the download succeeded?
+                                if (!transferResult.IsSuccess)
+                                {
+                                    // Print error (but continue with other files)
+                                    Toast.Dispatcher.Invoke(() =>
+                                    Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
+                                }
+                            }
+                        }
+                    }
+
+                    Toast.Dispatcher.Invoke(() =>
+                    Toast.MessageQueue.Enqueue("All mods up to date!"));
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: {0}", e);
+                return;
+            }
+            finally
+            {
+                wndMain.Dispatcher.Invoke(() =>
+                {
+                    btnUpdateMods.IsEnabled = true;
+                    progbarUpdateMods.Visibility = Visibility.Hidden;
+                });
+            }
+        }
+
         private async void DialogHost_DialogClosing(object sender, MaterialDesignThemes.Wpf.DialogClosingEventArgs eventArgs)
         {
             if (eventArgs.Parameter != null && eventArgs.Parameter.ToString().Equals("LOGIN"))
             {
-                AuthenticateResponse auth = await new Authenticate(new Credentials() { Username = Account.Email, Password = Account.Password }).PerformRequestAsync();
+                AuthenticateResponse auth = await new Authenticate(
+                    new Credentials() { 
+                        Username = Account.Email, 
+                        Password = Account.Password 
+                    }).PerformRequestAsync();
                 if (auth.IsSuccess)
                 {
                     UserAuthCache = auth;

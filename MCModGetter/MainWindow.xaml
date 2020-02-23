@@ -19,6 +19,8 @@
         
         x:Name="wndMain"
         Title="Minecraft Mod Manager" Height="491.949" Width="847.161" Loaded="WndMain_Loaded" SizeChanged="WndMain_SizeChanged"
+        WindowStartupLocation="CenterScreen"
+        PreviewMouseDown="wndMain_PreviewMouseDown"
         >
     <Window.Resources>
         <Style x:Key="MainButtonStyle" TargetType="Button">
@@ -97,7 +99,7 @@
                 <Expander x:Name="expSideMenu" Header="Menu" ExpandDirection="Right" Foreground="White" Margin="0,0,233,0" Background="#FF303030">
                     <StackPanel Background="#FFE5E5E5">
                         <uc:ExpanderMenuItem x:Name="emiLogin" Label="Login" Icon="Images/profile_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            ExpanderItemClick="ExpanderMenuItem_LoginClick" HorizontalAlignment="Right"/>
+                                            ExpanderItemClick="ExpanderMenuItem_LoginClick" HorizontalAlignment="Right" Visibility="Collapsed"/>
                         <uc:ExpanderMenuItem x:Name="emiSettings" Label="Configs" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                             ExpanderItemClick="ExpanderMenuItem_SettingsClick" HorizontalAlignment="Right"/>
                     </StackPanel>
@@ -143,17 +145,20 @@
                ToolTip="Double click to go to Mods folder."
                MouseDoubleClick="Label_MouseDoubleClick"/>
             <materialDesign:Snackbar x:Name="Toast" Height="80" Margin="216,0,233,8" HorizontalAlignment="Stretch" MessageQueue="{materialDesign:MessageQueue}"/>
-            <StackPanel Orientation="Vertical" Margin="10,0,0,10" Height="108" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="201">
+            <StackPanel Orientation="Vertical" Margin="10,0,0,10" Height="108" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="201"
+                        Visibility="Collapsed">
                 <Label Content="Access Token:" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White"/>
                 <Label x:Name="lblAccessToken" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="LimeGreen"/>
                 <Label Content="Client Token:" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White"/>
                 <Label x:Name="lblClientToken" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="LimeGreen"/>
             </StackPanel>
-            <Button x:Name="btnUpdateMods" Content="Update Current Mods" HorizontalAlignment="Left" Margin="10,0,0,123" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnUpdateMods_Click" IsEnabled="True"/>
+            <Button x:Name="btnUpdateMods" Content="Update Current Mods" HorizontalAlignment="Left" Margin="10,0,0,10" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnUpdateMods_Click" IsEnabled="True"/>
             <StackPanel x:Name="stkProgress" Height="128" HorizontalAlignment="Center" VerticalAlignment="Center" Width="128" Visibility="Hidden">
                 <ProgressBar x:Name="progbarUpdateMods" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Visibility="Hidden"/>
                 <TextBlock x:Name="txtProgressStatus" Text="{Binding ElementName=wndMain, Path=GoogleDriveDownloadProgress}"/>
             </StackPanel>
+            <Image x:Name="imgUserSkin" HorizontalAlignment="Left" Height="128" Margin="10,166,0,0" VerticalAlignment="Top" Width="128"
+                   Visibility="Collapsed"/>
         </Grid>
     </materialDesign:DialogHost>
 </Window>
