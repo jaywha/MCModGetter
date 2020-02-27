@@ -155,10 +155,12 @@
             <Button x:Name="btnUpdateMods" Content="Update Current Mods" HorizontalAlignment="Left" Margin="10,0,0,10" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnUpdateMods_Click" IsEnabled="True"/>
             <StackPanel x:Name="stkProgress" Height="128" HorizontalAlignment="Center" VerticalAlignment="Center" Width="128" Visibility="Hidden">
                 <ProgressBar x:Name="progbarUpdateMods" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Visibility="Hidden"/>
-                <TextBlock x:Name="txtProgressStatus" Text="{Binding ElementName=wndMain, Path=GoogleDriveDownloadProgress}"/>
+                <TextBlock x:Name="txtProgressStatus" Text="{Binding ElementName=wndMain, Path=FTPDownloadProgress}"/>
             </StackPanel>
             <Image x:Name="imgUserSkin" HorizontalAlignment="Left" Height="128" Margin="10,166,0,0" VerticalAlignment="Top" Width="128"
                    Visibility="Collapsed"/>
+            <Button x:Name="btnInstallForge" Content="Install Forge 1.12.2 2.6.1.81" Background="DarkBlue" HorizontalAlignment="Left" Margin="10,0,0,84" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnInstallForge_Click" IsEnabled="True" Height="41"/>
+            <Button x:Name="btnInstallMinecraft" Content="Install Minecraft 1.12.2" Background="SaddleBrown" HorizontalAlignment="Left" Margin="10,0,0,130" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnInstallMinecraft_Click" IsEnabled="True"/>
         </Grid>
     </materialDesign:DialogHost>
 </Window>
