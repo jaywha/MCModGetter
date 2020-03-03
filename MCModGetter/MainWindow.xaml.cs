@@ -12,12 +12,13 @@ using System.Windows.Input;
 using System.Windows.Media;
 using MojangSharp.Endpoints;
 using MojangSharp.Responses;
-using WinSCP;
 using Microsoft.Win32;
 using MaterialDesignThemes.Wpf;
 using System.Media;
 using MCModGetter.UserControls;
 using MCModGetter.Classes;
+using System.Threading;
+using System.Net;
 
 namespace MCModGetter
 {
@@ -56,6 +57,8 @@ namespace MCModGetter
                 OnPropertyChanged();
             }
         }
+
+        private NetworkCredential VoodooCredential = new NetworkCredential("jayw685@gmail.com.6857", "pt2T0gy68E");
 
 
         private string LogDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\MCModGetter-Logs\";
@@ -236,91 +239,80 @@ namespace MCModGetter
         #endregion
 
         #region Utilitiy Methods
-        private SessionOptions sessionOptions = new SessionOptions()
-        {
-            Protocol = Protocol.Ftp,
-            HostName = "192.99.21.157",
-            UserName = "jayw685@gmail.com.5215",
-            Password = "pt2T0gy68E"             
-        };
 
-        private string remotePath = "/mods/";
-
-        public void ProbeFiles()
+        public void ProbeFiles(string startingDir = "")
         {
             try
             {
-                using (Session session = new Session())
+                // Enumerate files and directories to download
+                List<string> Files = new List<string>();
+
+                // Get the object used to communicate with the server.
+                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(
+                    string.IsNullOrWhiteSpace(startingDir) ? "ftp://144.217.65.175/mods/" : startingDir);
+                request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
+
+                // This example assumes the FTP site uses anonymous logon.
+                request.Credentials = VoodooCredential;
+
+                FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+
+                Stream responseStream = response.GetResponseStream();
+                StreamReader reader = new StreamReader(responseStream);
+
+                while(!reader.EndOfStream)
                 {
-                    session.DisableVersionCheck = true;
+                    var newFile = reader.ReadLine().Split(' ');
+                    if (newFile.First().StartsWith("d")) {
+                        Files.Add("DIR" + newFile.Last());
+                    } else Files.Add(newFile.Last());
+                }
 
-                    // Connect
-                    session.Open(sessionOptions);
+                Console.WriteLine($"Directory List Complete, status {response.StatusDescription}");
 
-                    // Enumerate files and directories to download
-                    IEnumerable<RemoteFileInfo> fileInfos =
-                        session.EnumerateRemoteFiles(
-                            remotePath, null,
-                            EnumerationOptions.EnumerateDirectories |
-                                EnumerationOptions.AllDirectories);
+                reader.Close();
+                response.Close();
 
-                    var filesDownloaded = 0;
-                    foreach (RemoteFileInfo fileInfo in fileInfos.OrderBy(fileInfo => fileInfo.Name))
+                var filesDownloaded = 0;
+                foreach (var file in Files)
+                {
+                    string localFilePath = ModFileLocation + file;
+                    string remoteFilePath = "ftp://144.217.65.175/mods/" + file;
+
+                    if (!CurrentModList.Contains(file))
                     {
-                        string localFilePath = RemotePath.TranslateRemotePathToLocal(fileInfo.FullName, remotePath, ModFileLocation);
-
-                        if (fileInfo.IsDirectory)
+                        if (file.StartsWith("DIR"))
                         {
-                            // Create local subdirectory, if it does not exist yet
-                            if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
-                            continue;
-                        }
-
-                        if (!CurrentModList.Contains(fileInfo.Name))
-                        {                            
-                            if (fileInfo.Name.Contains("ChickenASM"))
-                            {
-                                var versionFolder = "1.12.2";
+                            try {
+                                ProbeFiles($"ftp://144.217.65.175/mods/"+file.Substring(3));
+                            } catch(Exception e) {
+                                // Print error (but continue with other files)
                                 Toast.Dispatcher.Invoke(() =>
-                                Toast.MessageQueue.Enqueue($"Downloading file into {versionFolder}\\{fileInfo.FullName}..."));
-                                // Download file
-                                string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
-                                TransferOperationResult transferResult =
-                                    session.GetFiles(remoteFilePath, localFilePath);
-
-                                // Did the download succeeded?
-                                if (!transferResult.IsSuccess)
-                                {
-                                    // Print error (but continue with other files)
-                                    Toast.Dispatcher.Invoke(() =>
-                                    Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
-                                }
-                            }
-                            else
-                            {
-                                Toast.Dispatcher.Invoke(() =>
-                                Toast.MessageQueue.Enqueue($"Downloading file {fileInfo.FullName}..."));
-                                // Download file
-                                string remoteFilePath = RemotePath.EscapeFileMask(fileInfo.FullName);
-                                TransferOperationResult transferResult =
-                                    session.GetFiles(remoteFilePath, localFilePath);
-
-                                // Did the download succeeded?
-                                if (!transferResult.IsSuccess)
-                                {
-                                    // Print error (but continue with other files)
-                                    Toast.Dispatcher.Invoke(() =>
-                                    Toast.MessageQueue.Enqueue($"Error downloading file {fileInfo.Name}: {transferResult.Failures[0].Message}"));
-                                }
+                                Toast.MessageQueue.Enqueue($"Error enumerating folder {file}!"));
                             }
                         }
+                        else
+                        {
+                            Toast.Dispatcher.Invoke(() =>
+                            Toast.MessageQueue.Enqueue($"Downloading file {file}..."));
+                            // Download file
+                            DownloadMod(remoteFilePath, localFilePath);
 
-                        FTPDownloadProgress = filesDownloaded++ / (double) fileInfos.Count();
+                            // Did the download succeeded?
+                            if (!File.Exists(localFilePath))
+                            {
+                                // Print error (but continue with other files)
+                                Toast.Dispatcher.Invoke(() =>
+                                Toast.MessageQueue.Enqueue($"Error downloading file {file}!"));
+                            }
+                        }
                     }
 
-                    Toast.Dispatcher.Invoke(() =>
-                    Toast.MessageQueue.Enqueue("All mods up to date!"));
+                    FTPDownloadProgress = filesDownloaded++ / (double) Files.Count();
                 }
+
+                Toast.Dispatcher.Invoke(() =>
+                Toast.MessageQueue.Enqueue("All mods up to date!"));                
             }
             catch (Exception e)
             {
@@ -334,6 +326,23 @@ namespace MCModGetter
                     btnUpdateMods.IsEnabled = true;
                     progbarUpdateMods.Visibility = Visibility.Hidden;
                 });
+            }
+        }
+
+        private void DownloadMod(string remoteURL, string localFilePath)
+        {
+            // Get the object used to communicate with the server.
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(remoteURL);
+            request.Method = WebRequestMethods.Ftp.DownloadFile;
+
+            // This example assumes the FTP site uses anonymous logon.
+            request.Credentials = VoodooCredential;
+
+            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+
+            using (Stream localFile = File.OpenWrite(localFilePath))
+            using (Stream responseStream = response.GetResponseStream()) {
+                responseStream.CopyTo(localFile);
             }
         }
 

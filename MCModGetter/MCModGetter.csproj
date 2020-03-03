@@ -104,9 +104,6 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="WinSCPnet, Version=1.7.2.10191, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf, processorArchitecture=MSIL">
-      <HintPath>..\packages\WinSCP.5.17.0\lib\net40\WinSCPnet.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -223,8 +220,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Fody.4.0.2\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.4.0.2\build\Fody.targets'))" />
     <Error Condition="!Exists('..\packages\Costura.Fody.3.3.3\build\Costura.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.3.3.3\build\Costura.Fody.props'))" />
-    <Error Condition="!Exists('..\packages\WinSCP.5.17.0\build\WinSCP.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WinSCP.5.17.0\build\WinSCP.targets'))" />
   </Target>
   <Import Project="..\packages\Fody.4.0.2\build\Fody.targets" Condition="Exists('..\packages\Fody.4.0.2\build\Fody.targets')" />
-  <Import Project="..\packages\WinSCP.5.17.0\build\WinSCP.targets" Condition="Exists('..\packages\WinSCP.5.17.0\build\WinSCP.targets')" />
 </Project>
