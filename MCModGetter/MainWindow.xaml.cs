@@ -242,14 +242,16 @@ namespace MCModGetter
 
         public void ProbeFiles(string startingDir = "")
         {
+            if (string.IsNullOrWhiteSpace(startingDir))
+                startingDir = "ftp://144.217.65.175/mods/";
+
             try
             {
                 // Enumerate files and directories to download
                 List<string> Files = new List<string>();
 
                 // Get the object used to communicate with the server.
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(
-                    string.IsNullOrWhiteSpace(startingDir) ? "ftp://144.217.65.175/mods/" : startingDir);
+                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(startingDir);
                 request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
 
                 // This example assumes the FTP site uses anonymous logon.
@@ -277,14 +279,14 @@ namespace MCModGetter
                 foreach (var file in Files)
                 {
                     string localFilePath = ModFileLocation + file;
-                    string remoteFilePath = "ftp://144.217.65.175/mods/" + file;
+                    string remoteFilePath = startingDir + file;
 
                     if (!CurrentModList.Contains(file))
                     {
                         if (file.StartsWith("DIR"))
                         {
                             try {
-                                ProbeFiles($"ftp://144.217.65.175/mods/"+file.Substring(3));
+                                ProbeFiles(startingDir+file.Substring(3)+"/");
                             } catch(Exception e) {
                                 // Print error (but continue with other files)
                                 Toast.Dispatcher.Invoke(() =>
