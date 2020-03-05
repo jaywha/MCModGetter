@@ -19,6 +19,7 @@ using MCModGetter.UserControls;
 using MCModGetter.Classes;
 using System.Threading;
 using System.Net;
+using System.Windows.Media.Imaging;
 
 namespace MCModGetter
 {
@@ -35,9 +36,12 @@ namespace MCModGetter
 
         #region Properties
         private FileSystemWatcher fileSystemWatcher;
-        public ObservableCollection<string> CurrentModList { get; private set; } = new ObservableCollection<string>();
+        public ObservableCollection<Mod> CurrentModList { get; private set; } = new ObservableCollection<Mod>();
+
+        private const string BaseURL = "ftp://144.217.65.175/mods/";
 
         private string _modFileLocation = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\.minecraft\mods\";
+
         public string ModFileLocation
         {
             get => _modFileLocation;
@@ -60,7 +64,7 @@ namespace MCModGetter
 
         private NetworkCredential VoodooCredential = new NetworkCredential("jayw685@gmail.com.6857", "pt2T0gy68E");
 
-
+        private StreamWriter CurrentLog;
         private string LogDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\MCModGetter-Logs\";
 
         private AuthenticateResponse UserAuthCache;
@@ -75,6 +79,8 @@ namespace MCModGetter
             Hide();
             Show();
 
+            Directory.CreateDirectory(ModFileLocation); // ensure mod folder exists
+
             fileSystemWatcher = new FileSystemWatcher(ModFileLocation, "*.*")
             {
                 EnableRaisingEvents = true,
@@ -86,9 +92,14 @@ namespace MCModGetter
             fileSystemWatcher.Renamed += FileSystemWatcher_FileEvent;
             fileSystemWatcher.Deleted += FileSystemWatcher_FileEvent;
 
+            foreach (string dirName in Directory.EnumerateDirectories(ModFileLocation).Select(d => d.Substring(d.LastIndexOf('\\') + 1)))
+            {
+                CurrentModList.Add(new Mod() { Name = dirName, ListViewIcon = new BitmapImage(new Uri("Images/folder-icon.png", UriKind.Relative)) });
+            }
+
             foreach (string fileName in Directory.EnumerateFiles(ModFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
             {
-                CurrentModList.Add(fileName);
+                CurrentModList.Add(new Mod() { Name = fileName });
             }
 
             Directory.CreateDirectory(LogDirectory);
@@ -122,9 +133,13 @@ namespace MCModGetter
                 tvMods.Dispatcher.Invoke(() =>
                 {
                     CurrentModList.Clear();
-                    foreach (string fileName in Directory.EnumerateFiles(ModFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
+                    foreach (string dirName in Directory.EnumerateDirectories(ModFileLocation).Select(d => d.Substring(d.LastIndexOf('\\') + 1))) {
+                        CurrentModList.Add(new Mod() { Name = dirName, ListViewIcon = new BitmapImage(new Uri("Images/folder-icon.png", UriKind.Relative)) });
+                    }
+
+                    foreach (string fileName in Directory.EnumerateFiles(ModFileLocation).Select(s => s.Substring(s.LastIndexOf('\\') + 1)))
                     {
-                        CurrentModList.Add(fileName);
+                        CurrentModList.Add(new Mod() { Name = fileName });
                     }
                 }, System.Windows.Threading.DispatcherPriority.Background);
             });
@@ -137,7 +152,7 @@ namespace MCModGetter
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 foreach (var f in files)
                 {
-                    CurrentModList.Add(f.Substring(f.LastIndexOf('\\') + 1));
+                    CurrentModList.Add(new Mod() { Name = f.Substring(f.LastIndexOf('\\') + 1) });
                     File.Copy(f, ModFileLocation + f.Substring(f.LastIndexOf('\\') + 1));
                 }
             }
@@ -205,13 +220,15 @@ namespace MCModGetter
             Toast.MessageQueue.Enqueue($"Successfully deleted the following mod: {modName}");
         }
 
-        
-
         private async void btnUpdateMods_Click(object sender, RoutedEventArgs e)
         {
             btnUpdateMods.IsEnabled = false;
             stkProgress.Visibility = Visibility.Visible;
             FTPDownloadProgress = 0.0;
+            Directory.Delete(ModFileLocation.Substring(0, ModFileLocation.Length-1), true);
+            Directory.CreateDirectory(ModFileLocation);
+
+            CurrentLog = File.AppendText(LogDirectory + $"UpdateMods_{DateTime.Now:MM-dd-yyyy hhmmss}");
             await Task.Factory.StartNew(() => ProbeFiles());
         }
 
@@ -232,7 +249,7 @@ namespace MCModGetter
 
             foreach (string file in ofd.FileNames)
             {
-                CurrentModList.Add(file.Substring(file.LastIndexOf('\\') + 1));
+                CurrentModList.Add(new Mod() { Name = file.Substring(file.LastIndexOf('\\') + 1) });
                 File.Copy(file, ModFileLocation + file.Substring(file.LastIndexOf('\\') + 1));
             }
         }
@@ -240,10 +257,9 @@ namespace MCModGetter
 
         #region Utilitiy Methods
 
-        public void ProbeFiles(string startingDir = "")
+        public void ProbeFiles(string innerPath = "")
         {
-            if (string.IsNullOrWhiteSpace(startingDir))
-                startingDir = "ftp://144.217.65.175/mods/";
+            string currentURL = BaseURL + innerPath;
 
             try
             {
@@ -251,7 +267,7 @@ namespace MCModGetter
                 List<string> Files = new List<string>();
 
                 // Get the object used to communicate with the server.
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(startingDir);
+                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(currentURL);
                 request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
 
                 // This example assumes the FTP site uses anonymous logon.
@@ -278,25 +294,23 @@ namespace MCModGetter
                 var filesDownloaded = 0;
                 foreach (var file in Files)
                 {
-                    string localFilePath = ModFileLocation + file;
-                    string remoteFilePath = startingDir + file;
+                    string localFilePath = ModFileLocation + innerPath + file;
+                    string remoteFilePath = currentURL + file;
 
-                    if (!CurrentModList.Contains(file))
+                    if (!CurrentModList.Where(mod=>!mod.Name.Equals(file)).Any())
                     {
                         if (file.StartsWith("DIR"))
                         {
                             try {
-                                ProbeFiles(startingDir+file.Substring(3)+"/");
+                                ProbeFiles(innerPath+file.Substring(3)+"/");
                             } catch(Exception e) {
                                 // Print error (but continue with other files)
-                                Toast.Dispatcher.Invoke(() =>
-                                Toast.MessageQueue.Enqueue($"Error enumerating folder {file}!"));
+                                CurrentLog.WriteLine($"Error enumerating folder {file}!");
                             }
                         }
                         else
                         {
-                            Toast.Dispatcher.Invoke(() =>
-                            Toast.MessageQueue.Enqueue($"Downloading file {file}..."));
+                            CurrentLog.WriteLine($"Downloading file {file}...");
                             // Download file
                             DownloadMod(remoteFilePath, localFilePath);
 
@@ -304,17 +318,15 @@ namespace MCModGetter
                             if (!File.Exists(localFilePath))
                             {
                                 // Print error (but continue with other files)
-                                Toast.Dispatcher.Invoke(() =>
-                                Toast.MessageQueue.Enqueue($"Error downloading file {file}!"));
+                                CurrentLog.WriteLine($"Error downloading file {file}!");
                             }
                         }
                     }
 
-                    FTPDownloadProgress = filesDownloaded++ / (double) Files.Count();
+                    FTPDownloadProgress = (filesDownloaded++ / (double) Files.Count()) * 100;
                 }
 
-                Toast.Dispatcher.Invoke(() =>
-                Toast.MessageQueue.Enqueue("All mods up to date!"));                
+                CurrentLog.WriteLine("All mods up to date!");
             }
             catch (Exception e)
             {
@@ -323,16 +335,27 @@ namespace MCModGetter
             }
             finally
             {
-                wndMain.Dispatcher.Invoke(() =>
+                if (string.IsNullOrWhiteSpace(innerPath))
                 {
-                    btnUpdateMods.IsEnabled = true;
-                    progbarUpdateMods.Visibility = Visibility.Hidden;
-                });
+                    wndMain.Dispatcher.Invoke(() =>
+                    {
+                        btnUpdateMods.IsEnabled = true;
+                        stkProgress.Visibility = Visibility.Hidden;
+                        tvMods.InvalidateArrange();
+                    });
+                }
             }
         }
 
         private void DownloadMod(string remoteURL, string localFilePath)
         {
+            var trueLocal = localFilePath.Replace('/', '\\');
+            var dirPath = trueLocal.Substring(0, trueLocal.LastIndexOf('\\')+1);
+            if (!Directory.Exists(dirPath))
+            {
+                Directory.CreateDirectory(dirPath);
+            }
+
             // Get the object used to communicate with the server.
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(remoteURL);
             request.Method = WebRequestMethods.Ftp.DownloadFile;
@@ -348,7 +371,7 @@ namespace MCModGetter
             }
         }
 
-        private async void DialogHost_DialogClosing(object sender, MaterialDesignThemes.Wpf.DialogClosingEventArgs eventArgs)
+        private async void DialogHost_DialogClosing(object sender, DialogClosingEventArgs eventArgs)
         {
             if (eventArgs.Parameter != null && eventArgs.Parameter.ToString().Equals("LOGIN"))
             {

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace MCModGetter.Classes
 {
@@ -15,5 +18,7 @@ namespace MCModGetter.Classes
         public string Version { get; set; }
         public bool IsClientSide { get; set; }
         public bool IsOnLocalMachine { get; set; }
+
+        public ImageSource ListViewIcon { get; set; } = new BitmapImage(new Uri("Images/file.png", UriKind.Relative));
     }
 }

@@ -124,8 +124,8 @@
                            Width="20"
                            Height="20"
                            Stretch="Fill"
-                           Source="Images/file.png"/>
-                                        <TextBlock Text="{Binding}" Margin="5,0" />
+                           Source="{Binding ListViewIcon}"/>
+                                        <TextBlock Text="{Binding Name}" Margin="5,0" />
                                     </StackPanel>
                                 </DataTemplate>
                             </Setter.Value>
@@ -154,8 +154,9 @@
             </StackPanel>
             <Button x:Name="btnUpdateMods" Content="Update Current Mods" HorizontalAlignment="Left" Margin="10,0,0,10" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnUpdateMods_Click" IsEnabled="True"/>
             <StackPanel x:Name="stkProgress" Height="128" HorizontalAlignment="Center" VerticalAlignment="Center" Width="128" Visibility="Hidden">
-                <ProgressBar x:Name="progbarUpdateMods" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Visibility="Hidden"/>
-                <TextBlock x:Name="txtProgressStatus" Text="{Binding ElementName=wndMain, Path=FTPDownloadProgress}"/>
+                <ProgressBar x:Name="progbarUpdateMods" Width="64" Height="64" Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True"/>
+                <TextBlock x:Name="txtProgressStatus" Text="{Binding ElementName=wndMain, Path=FTPDownloadProgress, StringFormat={}{0:#0}%, FallbackValue={}69%}"
+                           HorizontalAlignment="Center"/>
             </StackPanel>
             <Image x:Name="imgUserSkin" HorizontalAlignment="Left" Height="128" Margin="10,166,0,0" VerticalAlignment="Top" Width="128"
                    Visibility="Collapsed"/>
