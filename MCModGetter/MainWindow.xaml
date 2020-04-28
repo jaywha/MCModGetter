@@ -114,6 +114,15 @@
             <Button x:Name="btnDeleteMod" Content="Delete Selected Mod" Margin="0,0,0,10" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnDeleteMod_Click" Height="30" VerticalAlignment="Bottom"/>
             <TreeView x:Name="tvMods" Margin="216,36,233,10" Background="LightGray"
                   ItemsSource="{Binding CurrentModList, ElementName=wndMain}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter">
+                <TreeView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem x:Name="mnuiRefreshMods" Header="Refresh Mod List" Click="mnuiRefreshMods_Click">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="Refresh"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </TreeView.ContextMenu>
                 <TreeView.Resources>
                     <Style TargetType="{x:Type TreeViewItem}">
                         <Setter Property="HeaderTemplate">

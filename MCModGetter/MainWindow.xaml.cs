@@ -20,6 +20,7 @@ using MCModGetter.Classes;
 using System.Threading;
 using System.Net;
 using System.Windows.Media.Imaging;
+using System.Reflection;
 
 namespace MCModGetter
 {
@@ -39,6 +40,7 @@ namespace MCModGetter
         public ObservableCollection<Mod> CurrentModList { get; private set; } = new ObservableCollection<Mod>();
 
         private const string BaseURL = "ftp://144.217.65.175/mods/";
+        private const string BaseTitle = "Minecraft Mod Manager";
 
         private string _modFileLocation = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\.minecraft\mods\";
 
@@ -73,6 +75,8 @@ namespace MCModGetter
 
         #endregion
 
+        #region Window Methods
+
         public MainWindow()
         {
             InitializeComponent();
@@ -87,11 +91,17 @@ namespace MCModGetter
                 IncludeSubdirectories = false
             };
 
-            fileSystemWatcher.Created += FileSystemWatcher_FileEvent;
-            fileSystemWatcher.Changed += FileSystemWatcher_FileEvent;
-            fileSystemWatcher.Renamed += FileSystemWatcher_FileEvent;
-            fileSystemWatcher.Deleted += FileSystemWatcher_FileEvent;
+            fileSystemWatcher.SetListeners(FileSystemWatcher_FileEvent, FileSystemWatcher_FileEvent);
 
+            InitModList();
+
+            Directory.CreateDirectory(LogDirectory);
+
+            settings = new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 };
+        }
+
+        private void InitModList()
+        {
             foreach (string dirName in Directory.EnumerateDirectories(ModFileLocation).Select(d => d.Substring(d.LastIndexOf('\\') + 1)))
             {
                 CurrentModList.Add(new Mod() { Name = dirName, ListViewIcon = new BitmapImage(new Uri("Images/folder-icon.png", UriKind.Relative)) });
@@ -101,10 +111,6 @@ namespace MCModGetter
             {
                 CurrentModList.Add(new Mod() { Name = fileName });
             }
-
-            Directory.CreateDirectory(LogDirectory);
-
-            settings = new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 };
         }
 
         private void WndMain_Loaded(object sender, RoutedEventArgs e) { /*NOTE: Any preinit*/ }
@@ -125,6 +131,7 @@ namespace MCModGetter
             if (!visual.IsDescendantOf(expSideMenu))
                 expSideMenu.IsExpanded = false;
         }
+        #endregion
 
         #region FileSystemWatcher & TreeView Events
         private void FileSystemWatcher_FileEvent(object sender, FileSystemEventArgs e)
@@ -197,16 +204,42 @@ namespace MCModGetter
         #region Button Clicks
         private const string MinecraftLauncherDirectory = @"C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe";
 
+        private void btnInstallMinecraft_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: (Lizzie) Auto install the correct version of Minecraft
+            // 1. Download the correct Minecraft installation file (possibly from our Google drive?)
+            // 2. Run the installation file (could be a .exe or .jar, can't remember)
+            // 3. Verify that the .minecraft folder exists in C:\Users\<Username>\AppData\Roaming\
+            Toast.MessageQueue.Enqueue("Install MC - Work In Progress");
+        }
+
+        private void btnInstallForge_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: (Lizzie) Auto install the correct version of Forge
+            // 1. Download the correct Forge installation file (possibly from our Google drive?)
+            // 2. Run the installation file (could be a .exe or .jar, can't remember)
+            // 3. Run the game once and close it once title screen hits
+            // 4. Verify that the mods folder exists in C:\Users\<Username>\AppData\Roaming\.minecraft\
+            Toast.MessageQueue.Enqueue("Install Forge - Work In Progress");
+        }
+
+        private void mnuiRefreshMods_Click(object sender, RoutedEventArgs e)
+        {
+            CurrentModList.Clear();
+            InitModList();
+        }
+
         private void BtnPlayMinecraft_Click(object sender, RoutedEventArgs e) {
             Hide();
             var p = Process.Start(MinecraftLauncherDirectory);
             p.Exited += delegate {
+                Process.GetProcessesByName("javaw.exe")[0].WaitForExit();
+
                 Show();
                 BringIntoView();
                 Focus();
                 Activate();
             };
-            p.WaitForExit();
         }
 
         private void BtnDeleteMod_Click(object sender, RoutedEventArgs e)
@@ -222,14 +255,32 @@ namespace MCModGetter
 
         private async void btnUpdateMods_Click(object sender, RoutedEventArgs e)
         {
-            btnUpdateMods.IsEnabled = false;
-            stkProgress.Visibility = Visibility.Visible;
-            FTPDownloadProgress = 0.0;
-            Directory.Delete(ModFileLocation.Substring(0, ModFileLocation.Length-1), true);
-            Directory.CreateDirectory(ModFileLocation);
+            fileSystemWatcher.UnsetListeners(FileSystemWatcher_FileEvent, FileSystemWatcher_FileEvent);
 
-            CurrentLog = File.AppendText(LogDirectory + $"UpdateMods_{DateTime.Now:MM-dd-yyyy hhmmss}");
-            await Task.Factory.StartNew(() => ProbeFiles());
+            try
+            {
+                btnUpdateMods.IsEnabled = false;
+                stkProgress.Visibility = Visibility.Visible;
+                FTPDownloadProgress = 0.0;
+                Directory.Delete(ModFileLocation.Substring(0, ModFileLocation.Length - 1), true);
+                Directory.CreateDirectory(ModFileLocation);
+
+                CurrentLog = File.AppendText(LogDirectory + $"UpdateMods_{DateTime.Now:MM-dd-yyyy hhmmss}");
+                await Task.Factory.StartNew(() => ProbeFiles())
+                    .ContinueWith(prev => {
+                        Dispatcher.Invoke(() => {
+                            CurrentModList.Clear();
+                            InitModList();
+                        });
+                    });
+            } catch(IOException ioe)
+            {
+                Toast.MessageQueue.Enqueue("Minecraft or some other program is blocking access to mod files!", "Task Manager", delegate {
+                    Process.GetProcessesByName("taskmgr.exe");
+                });
+            }
+
+            fileSystemWatcher.SetListeners(FileSystemWatcher_FileEvent, FileSystemWatcher_FileEvent);
         }
 
         private void BtnAddMod_Click(object sender, RoutedEventArgs e)
@@ -324,8 +375,10 @@ namespace MCModGetter
                     }
 
                     FTPDownloadProgress = (filesDownloaded++ / (double) Files.Count()) * 100;
+                    Dispatcher.Invoke(() => Title = BaseTitle + " - " + (FTPDownloadProgress/100).ToString("P"));
                 }
 
+                Dispatcher.Invoke(() => Title = BaseTitle);
                 CurrentLog.WriteLine("All mods up to date!");
             }
             catch (Exception e)
@@ -349,12 +402,8 @@ namespace MCModGetter
 
         private void DownloadMod(string remoteURL, string localFilePath)
         {
-            var trueLocal = localFilePath.Replace('/', '\\');
-            var dirPath = trueLocal.Substring(0, trueLocal.LastIndexOf('\\')+1);
-            if (!Directory.Exists(dirPath))
-            {
-                Directory.CreateDirectory(dirPath);
-            }
+            string trueLocal = localFilePath.Replace('/', '\\');
+            string dirPath = trueLocal.Substring(0, trueLocal.LastIndexOf('\\')+1);
 
             // Get the object used to communicate with the server.
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(remoteURL);
@@ -365,7 +414,9 @@ namespace MCModGetter
 
             FtpWebResponse response = (FtpWebResponse)request.GetResponse();
 
-            using (Stream localFile = File.OpenWrite(localFilePath))
+            Directory.CreateDirectory(trueLocal.Substring(0, trueLocal.LastIndexOf('\\') + 1));
+
+            using (Stream localFile = File.OpenWrite(trueLocal))
             using (Stream responseStream = response.GetResponseStream()) {
                 responseStream.CopyTo(localFile);
             }
@@ -397,24 +448,26 @@ namespace MCModGetter
             }
         }
 
-        private void Image_MouseDown(object sender, MouseButtonEventArgs e) => new SoundPlayer(MCModGetter.Properties.Resources.emgei).Play();
+        private void Image_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var snd = "tmp.wav";
+            if (!File.Exists(snd))
+            {
+                Assembly assembly = Assembly.GetCallingAssembly();
+
+                using (BinaryReader r = new BinaryReader(Properties.Resources.emgei))
+                using (FileStream fs = new FileStream(snd, FileMode.OpenOrCreate))
+                using (BinaryWriter w = new BinaryWriter(fs))
+                {
+                    w.Write(r.ReadBytes((int)Properties.Resources.emgei.Length));
+                }
+            }
+
+            var soundEffect = new MediaPlayer();
+            soundEffect.Open(new Uri(snd, UriKind.Relative));
+            soundEffect.Volume = 0.4;
+            soundEffect.Play();
+        }
         #endregion
-
-        private void btnInstallMinecraft_Click(object sender, RoutedEventArgs e)
-        {
-            // TODO: (Lizzie) Auto install the correct version of Minecraft
-            // 1. Download the correct Minecraft installation file (possibly from our Google drive?)
-            // 2. Run the installation file (could be a .exe or .jar, can't remember)
-            // 3. Verify that the .minecraft folder exists in C:\Users\<Username>\AppData\Roaming\
-        }
-
-        private void btnInstallForge_Click(object sender, RoutedEventArgs e)
-        {
-            // TODO: (Lizzie) Auto install the correct version of Forge
-            // 1. Download the correct Forge installation file (possibly from our Google drive?)
-            // 2. Run the installation file (could be a .exe or .jar, can't remember)
-            // 3. Run the game once and close it once title screen hits
-            // 4. Verify that the mods folder exists in C:\Users\<Username>\AppData\Roaming\.minecraft\
-        }
     }
 }
