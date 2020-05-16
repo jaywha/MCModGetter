@@ -8,6 +8,7 @@
         xmlns:uc="clr-namespace:MCModGetter.UserControls"
         mc:Ignorable="d"
         
+        xmlns:tb="http://www.hardcodet.net/taskbar"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -21,6 +22,7 @@
         Title="Minecraft Mod Manager" Height="491.949" Width="847.161" Loaded="WndMain_Loaded" SizeChanged="WndMain_SizeChanged"
         WindowStartupLocation="CenterScreen"
         PreviewMouseDown="wndMain_PreviewMouseDown"
+        Closed="wndMain_Closed"
         >
     <Window.Resources>
         <Style x:Key="MainButtonStyle" TargetType="Button">
@@ -100,8 +102,10 @@
                     <StackPanel Background="#FFE5E5E5">
                         <uc:ExpanderMenuItem x:Name="emiLogin" Label="Login" Icon="Images/profile_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                             ExpanderItemClick="ExpanderMenuItem_LoginClick" HorizontalAlignment="Right" Visibility="Collapsed"/>
-                        <uc:ExpanderMenuItem x:Name="emiSettings" Label="Configs" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            ExpanderItemClick="ExpanderMenuItem_SettingsClick" HorizontalAlignment="Right"/>
+                        <uc:ExpanderMenuItem x:Name="emiConfigs" Label="Configs" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            ExpanderItemClick="ExpanderMenuItem_ConfigsClick" HorizontalAlignment="Right"/>
+                        <uc:ExpanderMenuItem x:Name="emiClientModBlacklist" Label="Client Mod Blacklist" Icon="Images/blacklist_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             ExpanderItemClick="emiClientModBlacklist_ExpanderItemClick" HorizontalAlignment="Right" />
                     </StackPanel>
                 </Expander>
             </Canvas>
@@ -169,8 +173,32 @@
             </StackPanel>
             <Image x:Name="imgUserSkin" HorizontalAlignment="Left" Height="128" Margin="10,166,0,0" VerticalAlignment="Top" Width="128"
                    Visibility="Collapsed"/>
-            <Button x:Name="btnInstallForge" Content="Install Forge 1.12.2 2.6.1.81" Background="DarkBlue" HorizontalAlignment="Left" Margin="10,0,0,84" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnInstallForge_Click" IsEnabled="True" Height="41"/>
-            <Button x:Name="btnInstallMinecraft" Content="Install Minecraft 1.12.2" Background="SaddleBrown" HorizontalAlignment="Left" Margin="10,0,0,130" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnInstallMinecraft_Click" IsEnabled="True"/>
+
+            <Button x:Name="btnInstallForge" Background="DarkBlue" HorizontalAlignment="Left" Margin="10,0,0,84" Padding="1" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnInstallForge_Click" IsEnabled="True" Height="41">
+                <Button.Content>
+                        <StackPanel x:Name="stkForgeInstall" Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Label x:Name="lblInstallForgeText" Content="Install Forge 1.12.2 2.6.1.81" Foreground="{Binding ElementName=btnInstallMinecraft, Path=Foreground}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon x:Name="packInstallForgeIcon" Kind="Hammer" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                </Button.Content>
+            </Button>
+            
+            <Button x:Name="btnInstallMinecraft" Background="SaddleBrown" HorizontalAlignment="Left" Margin="10,0,0,130" VerticalAlignment="Bottom" Width="201" Foreground="AntiqueWhite" Click="btnInstallMinecraft_Click" IsEnabled="True">
+                <Button.Content>
+                    <StackPanel x:Name="stkMCInstall" Orientation="Horizontal">
+                        <Label x:Name="lblInstallMCText" Content="Install Minecraft 1.12.2" Foreground="{Binding ElementName=btnInstallMinecraft, Path=Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <materialDesign:PackIcon x:Name="packInstallMCIcon" Kind="Minecraft" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+
+            <tb:TaskbarIcon
+                x:Name="Notify"
+                ToolTip="MC Mod Getter"
+                ToolTipText="MC Mod Getter"
+                IconSource="Images/main_icon.ico"
+                TrayMouseDoubleClick="Notify_TrayMouseDoubleClick"
+                />
         </Grid>
     </materialDesign:DialogHost>
 </Window>

@@ -1,0 +1,30 @@
+﻿<UserControl x:Class="MCModGetter.UserControls.BlacklistControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MCModGetter.UserControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             x:Name="uccBlacklistControl"
+             Loaded="uccBlacklistControl_Loaded">
+    <Grid Background="Black">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="50*" />
+            <ColumnDefinition Width="50*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="90*"/>
+        </Grid.RowDefinitions>
+        <Label x:Name="lblServerSide" Content="Server Side Blacklist" FontFamily="Roboto" FontSize="24" Grid.Row="0" Grid.Column="0"
+               Foreground="Aquamarine" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+        <ListView x:Name="lvServerSide" Foreground="LimeGreen" Grid.Column="0" Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ItemsSource="{Binding ElementName=uccBlacklistControl, Path=ServerSideBlacklist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <GridSplitter VerticalAlignment="Stretch" HorizontalAlignment="Right" Width="5" Background="AliceBlue" Grid.Column="0" Grid.RowSpan="2" Grid.Row="0"/>
+        <Label x:Name="lblClientSide" Content="Client Side Blacklist" FontFamily="Roboto" FontSize="24" Grid.Row="0" Grid.Column="1"
+               Foreground="Aquamarine" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+        <ListView x:Name="lvClientSide" Foreground="LimeGreen" Grid.Column="1" Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ItemsSource="{Binding ElementName=uccBlacklistControl, Path=ClientSideBlacklist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+    </Grid>
+</UserControl>

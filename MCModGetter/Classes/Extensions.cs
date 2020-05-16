@@ -53,13 +53,14 @@ namespace MCModGetter.Classes
         /// </summary>
         /// <param name="watcher">The calling <see cref="FileSystemWatcher"/></param>
         /// <param name="handler">The <see cref="FileSystemEventHandler"/> for create, change, and delete.</param>
-        /// <param name="handler2">The <see cref="RenamedEventHandler"/> for rename events (can be same as <paramref name="handler"/> just needs casting from method group to correct handler)</param>
         [STAThread]
-        public static void SetListeners(this FileSystemWatcher watcher, FileSystemEventHandler handler, RenamedEventHandler handler2)
+        public static void SetListeners(this FileSystemWatcher watcher, FileSystemEventHandler handler)
         {
+            void renamedHandler(object o, RenamedEventArgs args) => handler.Invoke(o, args);
+
             watcher.Created += handler;
             watcher.Changed += handler;
-            watcher.Renamed += handler2;
+            watcher.Renamed += renamedHandler;
             watcher.Deleted += handler;
         }
 
@@ -68,13 +69,14 @@ namespace MCModGetter.Classes
         /// </summary>
         /// <param name="watcher">The calling <see cref="FileSystemWatcher"/></param>
         /// <param name="handler">The <see cref="FileSystemEventHandler"/> for create, change, and delete.</param>
-        /// <param name="handler2">The <see cref="RenamedEventHandler"/> for rename events (can be same as <paramref name="handler"/> just needs casting from method group to correct handler)</param>
         [STAThread]
-        public static void UnsetListeners(this FileSystemWatcher watcher, FileSystemEventHandler handler, RenamedEventHandler handler2)
+        public static void UnsetListeners(this FileSystemWatcher watcher, FileSystemEventHandler handler)
         {
+            void renamedHandler(object o, RenamedEventArgs args) => handler.Invoke(o, args);
+
             watcher.Created -= handler;
             watcher.Changed -= handler;
-            watcher.Renamed -= handler2;
+            watcher.Renamed -= renamedHandler;
             watcher.Deleted -= handler;
         }
     }

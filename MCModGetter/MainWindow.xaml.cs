@@ -21,6 +21,7 @@ using System.Threading;
 using System.Net;
 using System.Windows.Media.Imaging;
 using System.Reflection;
+using System.Windows.Controls;
 
 namespace MCModGetter
 {
@@ -64,7 +65,7 @@ namespace MCModGetter
             }
         }
 
-        private NetworkCredential VoodooCredential = new NetworkCredential("jayw685@gmail.com.6857", "pt2T0gy68E");
+        private NetworkCredential VoodooCredential = new NetworkCredential("jayw685@gmail.com.6857", DBConfig.FakePebble);
 
         private StreamWriter CurrentLog;
         private string LogDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\MCModGetter-Logs\";
@@ -72,7 +73,7 @@ namespace MCModGetter
         private AuthenticateResponse UserAuthCache;
 
         private readonly SettingsControl settings;
-
+        private readonly BlacklistControl blacklist;
         #endregion
 
         #region Window Methods
@@ -91,13 +92,14 @@ namespace MCModGetter
                 IncludeSubdirectories = false
             };
 
-            fileSystemWatcher.SetListeners(FileSystemWatcher_FileEvent, FileSystemWatcher_FileEvent);
+            fileSystemWatcher.SetListeners(FileSystemWatcher_FileEvent);
 
             InitModList();
 
             Directory.CreateDirectory(LogDirectory);
 
             settings = new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 };
+            blacklist = new BlacklistControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 };
         }
 
         private void InitModList()
@@ -113,7 +115,21 @@ namespace MCModGetter
             }
         }
 
-        private void WndMain_Loaded(object sender, RoutedEventArgs e) { /*NOTE: Any preinit*/ }
+        private void WndMain_Loaded(object sender, RoutedEventArgs e) {
+            if (File.Exists(@"C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe"))
+            {
+                lblInstallMCText.Content = "Minecraft Detected!";
+                packInstallMCIcon.Kind = PackIconKind.Check;
+                btnInstallMinecraft.IsEnabled = false;
+            }
+
+            if (File.Exists($@"C:\Users\{Environment.UserName}\AppData\Roaming\.minecraft\libraries\net\minecraftforge\forge\1.12.2-14.23.5.2838\forge-1.12.2-14.23.5.2838.jar"))
+            {
+                lblInstallForgeText.Content = "Forge Deteced!";
+                packInstallForgeIcon.Kind = PackIconKind.Check;
+                btnInstallForge.IsEnabled = false;
+            }
+        }
 
         private void WndMain_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -122,6 +138,11 @@ namespace MCModGetter
                 settings.Width = ActualWidth - 100.0;
                 settings.Height = ActualHeight - 100.0;
             }
+        }
+
+        private void wndMain_Closed(object sender, EventArgs e)
+        {
+            Environment.Exit(0);
         }
 
         private void wndMain_PreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -183,7 +204,7 @@ namespace MCModGetter
         }
 
         private Window settingsWindow;
-        private void ExpanderMenuItem_SettingsClick(object sender, EventArgs e) {
+        private void ExpanderMenuItem_ConfigsClick(object sender, EventArgs e) {
             if (settingsWindow != null) {
                 settingsWindow.CenterWindowOnScreen();
                 settingsWindow.Activate();
@@ -196,6 +217,28 @@ namespace MCModGetter
                     WindowStyle = WindowStyle.ToolWindow
                 };
                 settingsWindow.Show();
+            }
+            expSideMenu.IsExpanded = false;
+        }
+
+        private Window blacklistWindow;
+        private void emiClientModBlacklist_ExpanderItemClick(object sender, EventArgs e)
+        {
+            if (blacklistWindow != null)
+            {
+                blacklistWindow.CenterWindowOnScreen();
+                blacklistWindow.Activate();
+            }
+            else
+            {
+                blacklistWindow = new Window()
+                {
+                    Title = "Mod Blacklist Settings Window",
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    Content = blacklist,
+                    WindowStyle = WindowStyle.ToolWindow
+                };
+                blacklistWindow.Show();
             }
             expSideMenu.IsExpanded = false;
         }
@@ -255,14 +298,15 @@ namespace MCModGetter
 
         private async void btnUpdateMods_Click(object sender, RoutedEventArgs e)
         {
-            fileSystemWatcher.UnsetListeners(FileSystemWatcher_FileEvent, FileSystemWatcher_FileEvent);
+            Notify.ShowBalloonTip("Start MC Mod Updates", "We're updating mods now. This should take just a couple of minutes...", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+            fileSystemWatcher.UnsetListeners(FileSystemWatcher_FileEvent);
 
             try
             {
                 btnUpdateMods.IsEnabled = false;
                 stkProgress.Visibility = Visibility.Visible;
                 FTPDownloadProgress = 0.0;
-                Directory.Delete(ModFileLocation.Substring(0, ModFileLocation.Length - 1), true);
+                //Directory.Delete(ModFileLocation.Substring(0, ModFileLocation.Length - 1), true);
                 Directory.CreateDirectory(ModFileLocation);
 
                 CurrentLog = File.AppendText(LogDirectory + $"UpdateMods_{DateTime.Now:MM-dd-yyyy hhmmss}");
@@ -280,7 +324,7 @@ namespace MCModGetter
                 });
             }
 
-            fileSystemWatcher.SetListeners(FileSystemWatcher_FileEvent, FileSystemWatcher_FileEvent);
+            fileSystemWatcher.SetListeners(FileSystemWatcher_FileEvent);
         }
 
         private void BtnAddMod_Click(object sender, RoutedEventArgs e)
@@ -392,6 +436,10 @@ namespace MCModGetter
                 {
                     wndMain.Dispatcher.Invoke(() =>
                     {
+                        Notify.ShowBalloonTip("Finished MC Mod Updates!", "Updates are done! You can now play on the server.", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+
+                        CurrentLog.Flush();
+                        CurrentLog.Close();
                         btnUpdateMods.IsEnabled = true;
                         stkProgress.Visibility = Visibility.Hidden;
                         tvMods.InvalidateArrange();
@@ -469,5 +517,13 @@ namespace MCModGetter
             soundEffect.Play();
         }
         #endregion
+
+        private void Notify_TrayMouseDoubleClick(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Normal;
+            BringIntoView();
+            Activate();
+            Focus();
+        }
     }
 }
