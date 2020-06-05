@@ -381,7 +381,8 @@ namespace MCModGetter
                     } else Files.Add(newFile.Last());
                 }
 
-                Console.WriteLine($"Directory List Complete, status {response.StatusDescription}");
+                Console.WriteLine($"Directory List Complete, status: {response.StatusDescription}");
+                Console.WriteLine("=== Start Listing ===");
 
                 reader.Close();
                 response.Close();
@@ -392,10 +393,16 @@ namespace MCModGetter
                     string localFilePath = ModFileLocation + innerPath + file;
                     string remoteFilePath = currentURL + file;
 
-                    if (!CurrentModList.Where(mod=>!mod.Name.Equals(file)).Any())
+                    Console.Write($"File [{file}] ==> ");
+
+                    if ((file.StartsWith("DIR") && !Directory.Exists(localFilePath)) || !File.Exists(localFilePath))
                     {
+                        Console.WriteLine("Downloaded!");
+
                         if (file.StartsWith("DIR"))
                         {
+                            if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
+
                             try {
                                 ProbeFiles(innerPath+file.Substring(3)+"/");
                             } catch(Exception e) {
@@ -416,6 +423,10 @@ namespace MCModGetter
                                 CurrentLog.WriteLine($"Error downloading file {file}!");
                             }
                         }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Skipped...");
                     }
 
                     FTPDownloadProgress = (filesDownloaded++ / (double) Files.Count()) * 100;
