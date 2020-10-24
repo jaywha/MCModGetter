@@ -39,6 +39,7 @@ namespace MCModGetter
         #region Properties
         private FileSystemWatcher fileSystemWatcher;
         public ObservableCollection<Mod> CurrentModList { get; private set; } = new ObservableCollection<Mod>();
+        public List<Mod> ServerModList { get; private set; } = new List<Mod>();
 
         private const string BaseURL = "ftp://144.217.65.175/mods/";
         private const string BaseTitle = "Minecraft Mod Manager";
@@ -59,7 +60,8 @@ namespace MCModGetter
         public double FTPDownloadProgress
         {
             get => ftpDownloadProgress;
-            set {
+            set
+            {
                 ftpDownloadProgress = value;
                 OnPropertyChanged();
             }
@@ -69,6 +71,7 @@ namespace MCModGetter
 
         private StreamWriter CurrentLog;
         private string LogDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\MCModGetter-Logs\";
+        private bool UpdateRanOnce = false;
 
         private AuthenticateResponse UserAuthCache;
 
@@ -76,15 +79,47 @@ namespace MCModGetter
         private readonly BlacklistControl blacklist;
         #endregion
 
+        public void SetupErrorCatchers()
+        {
+            // attempted to fix visual studio exception on stopping debugging
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(
+                delegate (object sender, UnhandledExceptionEventArgs uaeargs) {
+                    Exception e = (Exception)uaeargs.ExceptionObject;
+                    var out_msg = $"[UnhandledExceptionHandler]: {e.Message}\n" +
+                        $"(Stack Trace)\n{new string('-', 20)}\n\n{e.StackTrace}\n\n{new string('-', 20)}\n" +
+                        $"Will runtime terminate now? -> \'{(uaeargs.IsTerminating ? "Yes" : "No")}\'";
+
+                    MessageBox.Show(out_msg, "Unhandled Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                });
+            AppDomain.CurrentDomain.FirstChanceException += new EventHandler<System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs>(
+                delegate (object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs fcargs)
+                {
+                    Exception e = fcargs.Exception;
+                    var out_msg = $"[FirstChanceHandler]: {e.Message}\n" +
+                        $"(Stack Trace)\n{new string('-', 20)}\n\n{e.StackTrace}\n";
+
+                    MessageBox.Show(out_msg, "First Chance Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+                });
+        }
+
         #region Window Methods
 
         public MainWindow()
         {
+            SetupErrorCatchers();
             InitializeComponent();
             Hide();
             Show();
 
-            Directory.CreateDirectory(ModFileLocation); // ensure mod folder exists
+            try
+            {
+                Directory.CreateDirectory(ModFileLocation); // ensure mod folder exists
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong while creating the default mod folder.\nScreenshot this and let Jay know.\n Exception Message: {ex.Message}\n Stack Trace: {ex.StackTrace} ", "Mod Folder Error");
+            }
 
             fileSystemWatcher = new FileSystemWatcher(ModFileLocation, "*.*")
             {
@@ -96,7 +131,13 @@ namespace MCModGetter
 
             InitModList();
 
-            Directory.CreateDirectory(LogDirectory);
+            try { 
+                Directory.CreateDirectory(LogDirectory);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong while creating the error log folder.\nScreenshot this and let Jay know.\n Exception Message: {ex.Message}\n Stack Trace: {ex.StackTrace} ", "Log Folder Error");
+            }
 
             settings = new SettingsControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 };
             blacklist = new BlacklistControl() { Width = ActualWidth - 100.0, Height = ActualHeight - 100.0 };
@@ -104,18 +145,38 @@ namespace MCModGetter
 
         private void InitModList()
         {
-            foreach (string dirName in Directory.EnumerateDirectories(ModFileLocation).Select(d => d.Substring(d.LastIndexOf('\\') + 1)))
+            try { 
+                foreach (string dirName in Directory.EnumerateDirectories(ModFileLocation).Select(d => d.Substring(d.LastIndexOf('\\') + 1)))
+                {
+                    CurrentModList.Add(new Mod() { Name = dirName, ListViewIcon = new BitmapImage(new Uri("Images/folder-icon.png", UriKind.Relative)) });
+                }
+            }
+            catch (Exception ex)
             {
-                CurrentModList.Add(new Mod() { Name = dirName, ListViewIcon = new BitmapImage(new Uri("Images/folder-icon.png", UriKind.Relative)) });
+                MessageBox.Show($"Something went wrong while reading all the mods in the mod folder.\nScreenshot and let Jay know.\n Exception Message: {ex.Message}\n Stack Trace: {ex.StackTrace} ", "Unknown Error");
             }
 
-            foreach (string fileName in Directory.EnumerateFiles(ModFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
+            try { 
+                foreach (string fileName in Directory.EnumerateFiles(ModFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
+                {
+                    if (UpdateRanOnce 
+                        && ServerModList.Select(m => m.Name.Equals(fileName) ? m : null).Single() == null
+                        && File.Exists(ModFileLocation + fileName))
+                    {
+                        File.Delete(ModFileLocation + fileName);
+                    }
+
+                    CurrentModList.Add(new Mod() { Name = fileName });
+                }
+            }
+            catch (Exception ex)
             {
-                CurrentModList.Add(new Mod() { Name = fileName });
+                MessageBox.Show($"Something went wrong while reading all the sub-folders in the mod folder.\nScreenshot and let Jay know.\n Exception Message: {ex.Message}\n Stack Trace: {ex.StackTrace} ", "Unknown Error");
             }
         }
 
-        private void WndMain_Loaded(object sender, RoutedEventArgs e) {
+        private void WndMain_Loaded(object sender, RoutedEventArgs e)
+        {
             if (File.Exists(@"C:\Program Files (x86)\Minecraft Launcher\MinecraftLauncher.exe"))
             {
                 lblInstallMCText.Content = "Minecraft Detected!";
@@ -133,7 +194,7 @@ namespace MCModGetter
 
         private void WndMain_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if(dlghostMain.IsOpen)
+            if (dlghostMain.IsOpen)
             {
                 settings.Width = ActualWidth - 100.0;
                 settings.Height = ActualHeight - 100.0;
@@ -157,11 +218,13 @@ namespace MCModGetter
         #region FileSystemWatcher & TreeView Events
         private void FileSystemWatcher_FileEvent(object sender, FileSystemEventArgs e)
         {
-            Task.Factory.StartNew(() => {
+            Task.Factory.StartNew(() =>
+            {
                 tvMods.Dispatcher.Invoke(() =>
                 {
                     CurrentModList.Clear();
-                    foreach (string dirName in Directory.EnumerateDirectories(ModFileLocation).Select(d => d.Substring(d.LastIndexOf('\\') + 1))) {
+                    foreach (string dirName in Directory.EnumerateDirectories(ModFileLocation).Select(d => d.Substring(d.LastIndexOf('\\') + 1)))
+                    {
                         CurrentModList.Add(new Mod() { Name = dirName, ListViewIcon = new BitmapImage(new Uri("Images/folder-icon.png", UriKind.Relative)) });
                     }
 
@@ -194,21 +257,26 @@ namespace MCModGetter
             }
         }
 
-         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
+        private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
         #endregion
 
         #region Expander Menu Item Clicks
-        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e) {
+        private void ExpanderMenuItem_LoginClick(object sender, EventArgs e)
+        {
             DialogHost.Show(new LoginControl());
             expSideMenu.IsExpanded = false;
         }
 
         private Window settingsWindow;
-        private void ExpanderMenuItem_ConfigsClick(object sender, EventArgs e) {
-            if (settingsWindow != null) {
+        private void ExpanderMenuItem_ConfigsClick(object sender, EventArgs e)
+        {
+            if (settingsWindow != null)
+            {
                 settingsWindow.CenterWindowOnScreen();
                 settingsWindow.Activate();
-            } else {
+            }
+            else
+            {
                 settingsWindow = new Window()
                 {
                     Title = "Config Settings Window",
@@ -272,10 +340,12 @@ namespace MCModGetter
             InitModList();
         }
 
-        private void BtnPlayMinecraft_Click(object sender, RoutedEventArgs e) {
+        private void BtnPlayMinecraft_Click(object sender, RoutedEventArgs e)
+        {
             Hide();
             var p = Process.Start(MinecraftLauncherDirectory);
-            p.Exited += delegate {
+            p.Exited += delegate
+            {
                 Process.GetProcessesByName("javaw.exe")[0].WaitForExit();
 
                 Show();
@@ -298,6 +368,7 @@ namespace MCModGetter
 
         private async void btnUpdateMods_Click(object sender, RoutedEventArgs e)
         {
+            UpdateRanOnce = true;
             Notify.ShowBalloonTip("Start MC Mod Updates", "We're updating mods now. This should take just a couple of minutes...", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
             fileSystemWatcher.UnsetListeners(FileSystemWatcher_FileEvent);
 
@@ -311,15 +382,19 @@ namespace MCModGetter
 
                 CurrentLog = File.AppendText(LogDirectory + $"UpdateMods_{DateTime.Now:MM-dd-yyyy hhmmss}");
                 await Task.Factory.StartNew(() => ProbeFiles())
-                    .ContinueWith(prev => {
-                        Dispatcher.Invoke(() => {
+                    .ContinueWith(prev =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
                             CurrentModList.Clear();
                             InitModList();
                         });
                     });
-            } catch(IOException ioe)
+            }
+            catch (IOException ioe)
             {
-                Toast.MessageQueue.Enqueue("Minecraft or some other program is blocking access to mod files!", "Task Manager", delegate {
+                Toast.MessageQueue.Enqueue("Minecraft or some other program is blocking access to mod files!", "Task Manager", delegate
+                {
                     Process.GetProcessesByName("taskmgr.exe");
                 });
             }
@@ -373,12 +448,14 @@ namespace MCModGetter
                 Stream responseStream = response.GetResponseStream();
                 StreamReader reader = new StreamReader(responseStream);
 
-                while(!reader.EndOfStream)
+                while (!reader.EndOfStream)
                 {
                     var newFile = reader.ReadLine().Split(' ');
-                    if (newFile.First().StartsWith("d")) {
+                    if (newFile.First().StartsWith("d"))
+                    {
                         Files.Add("DIR" + newFile.Last());
-                    } else Files.Add(newFile.Last());
+                    }
+                    else Files.Add(newFile.Last());
                 }
 
                 Console.WriteLine($"Directory List Complete, status: {response.StatusDescription}");
@@ -395,6 +472,8 @@ namespace MCModGetter
 
                     Console.Write($"File [{file}] ==> ");
 
+                    Mod serverMod = new Mod() { Name = file, IsClientSide = false };
+
                     if ((file.StartsWith("DIR") && !Directory.Exists(localFilePath)) || !File.Exists(localFilePath))
                     {
                         Console.WriteLine("Downloaded!");
@@ -403,14 +482,17 @@ namespace MCModGetter
                         {
                             if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
 
-                            try {
-                                ProbeFiles(innerPath+file.Substring(3)+"/");
-                            } catch(Exception e) {
+                            try
+                            {
+                                ProbeFiles(innerPath + file.Substring(3) + "/");
+                            }
+                            catch (Exception e)
+                            {
                                 // Print error (but continue with other files)
                                 CurrentLog.WriteLine($"Error enumerating folder {file}!");
                             }
                         }
-                        else
+                        else // is file
                         {
                             CurrentLog.WriteLine($"Downloading file {file}...");
                             // Download file
@@ -422,6 +504,11 @@ namespace MCModGetter
                                 // Print error (but continue with other files)
                                 CurrentLog.WriteLine($"Error downloading file {file}!");
                             }
+                            else
+                            {
+                                serverMod.IsOnLocalMachine = true;
+                                ServerModList.Add(serverMod);
+                            }
                         }
                     }
                     else
@@ -429,8 +516,8 @@ namespace MCModGetter
                         Console.WriteLine("Skipped...");
                     }
 
-                    FTPDownloadProgress = (filesDownloaded++ / (double) Files.Count()) * 100;
-                    Dispatcher.Invoke(() => Title = BaseTitle + " - " + (FTPDownloadProgress/100).ToString("P"));
+                    FTPDownloadProgress = (filesDownloaded++ / (double)Files.Count()) * 100;
+                    Dispatcher.Invoke(() => Title = BaseTitle + " - " + (FTPDownloadProgress / 100).ToString("P"));
                 }
 
                 Dispatcher.Invoke(() => Title = BaseTitle);
@@ -462,7 +549,7 @@ namespace MCModGetter
         private void DownloadMod(string remoteURL, string localFilePath)
         {
             string trueLocal = localFilePath.Replace('/', '\\');
-            string dirPath = trueLocal.Substring(0, trueLocal.LastIndexOf('\\')+1);
+            string dirPath = trueLocal.Substring(0, trueLocal.LastIndexOf('\\') + 1);
 
             // Get the object used to communicate with the server.
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(remoteURL);
@@ -476,7 +563,8 @@ namespace MCModGetter
             Directory.CreateDirectory(trueLocal.Substring(0, trueLocal.LastIndexOf('\\') + 1));
 
             using (Stream localFile = File.OpenWrite(trueLocal))
-            using (Stream responseStream = response.GetResponseStream()) {
+            using (Stream responseStream = response.GetResponseStream())
+            {
                 responseStream.CopyTo(localFile);
             }
         }
@@ -486,9 +574,10 @@ namespace MCModGetter
             if (eventArgs.Parameter != null && eventArgs.Parameter.ToString().Equals("LOGIN"))
             {
                 AuthenticateResponse auth = await new Authenticate(
-                    new Credentials() { 
-                        Username = Account.Email, 
-                        Password = Account.Password 
+                    new Credentials()
+                    {
+                        Username = Account.Email,
+                        Password = Account.Password
                     }).PerformRequestAsync();
                 if (auth.IsSuccess)
                 {
