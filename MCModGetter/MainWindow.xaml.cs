@@ -153,25 +153,27 @@ namespace MCModGetter
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Something went wrong while reading all the mods in the mod folder.\nScreenshot and let Jay know.\n Exception Message: {ex.Message}\n Stack Trace: {ex.StackTrace} ", "Unknown Error");
+                MessageBox.Show($"Something went wrong while reading all the folders in the main mod folder.\nScreenshot and let Jay know.\n Exception Message: {ex.Message}\n Stack Trace: {ex.StackTrace} ", "Unknown Error");
             }
 
             try { 
                 foreach (string fileName in Directory.EnumerateFiles(ModFileLocation).Select((s) => s.Substring(s.LastIndexOf('\\') + 1)))
                 {
-                    if (UpdateRanOnce 
-                        && ServerModList.Select(m => m.Name.Equals(fileName) ? m : null).Single() == null
-                        && File.Exists(ModFileLocation + fileName))
-                    {
-                        File.Delete(ModFileLocation + fileName);
-                    }
+                    //TOOD: Y?
+                    //if (UpdateRanOnce 
+                    //    && ServerModList.Count > 0
+                    //    && ServerModList.Select(m => m.Name.Equals(fileName) ? m : null).Single() == null
+                    //    && File.Exists(ModFileLocation + fileName))
+                    //{
+                    //    File.Delete(ModFileLocation + fileName);
+                    //}
 
-                    CurrentModList.Add(new Mod() { Name = fileName });
+                    CurrentModList.Add(new Mod() { Name = fileName, ListViewIcon = new BitmapImage(new Uri("Images/file.png", UriKind.Relative)) });
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Something went wrong while reading all the sub-folders in the mod folder.\nScreenshot and let Jay know.\n Exception Message: {ex.Message}\n Stack Trace: {ex.StackTrace} ", "Unknown Error");
+                MessageBox.Show($"Something went wrong while reading all the mods in the main mod folder.\nScreenshot and let Jay know.\n Exception Message: {ex.Message}\n Stack Trace: {ex.StackTrace} ", "Unknown Error");
             }
         }
 
@@ -203,7 +205,7 @@ namespace MCModGetter
 
         private void wndMain_Closed(object sender, EventArgs e)
         {
-            Environment.Exit(0);
+            Application.Current.Shutdown();
         }
 
         private void wndMain_PreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -321,6 +323,7 @@ namespace MCModGetter
             // 1. Download the correct Minecraft installation file (possibly from our Google drive?)
             // 2. Run the installation file (could be a .exe or .jar, can't remember)
             // 3. Verify that the .minecraft folder exists in C:\Users\<Username>\AppData\Roaming\
+            // 4. Update the button to show that Minecraft is installed now.
             Toast.MessageQueue.Enqueue("Install MC - Work In Progress");
         }
 
@@ -331,6 +334,7 @@ namespace MCModGetter
             // 2. Run the installation file (could be a .exe or .jar, can't remember)
             // 3. Run the game once and close it once title screen hits
             // 4. Verify that the mods folder exists in C:\Users\<Username>\AppData\Roaming\.minecraft\
+            // 4. Update the button to show that Forge is installed now.
             Toast.MessageQueue.Enqueue("Install Forge - Work In Progress");
         }
 
@@ -467,7 +471,7 @@ namespace MCModGetter
                 var filesDownloaded = 0;
                 foreach (var file in Files)
                 {
-                    string localFilePath = ModFileLocation + innerPath + file;
+                    string localFilePath = (ModFileLocation + innerPath + file).Replace("/", @"\");
                     string remoteFilePath = currentURL + file;
 
                     Console.Write($"File [{file}] ==> ");
@@ -480,6 +484,7 @@ namespace MCModGetter
 
                         if (file.StartsWith("DIR"))
                         {
+                            localFilePath = localFilePath.Replace("DIR", "");
                             if (!Directory.Exists(localFilePath)) Directory.CreateDirectory(localFilePath);
 
                             try
