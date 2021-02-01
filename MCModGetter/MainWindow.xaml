@@ -102,6 +102,8 @@
                     <StackPanel Background="#FFE5E5E5">
                         <uc:ExpanderMenuItem x:Name="emiLogin" Label="Login" Icon="Images/profile_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                             ExpanderItemClick="ExpanderMenuItem_LoginClick" HorizontalAlignment="Right" Visibility="Collapsed"/>
+                        <uc:ExpanderMenuItem x:Name="emiUpdateMCModGetter" Label="Update Program" Icon="Images/github_update.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             ExpanderItemClick="emiUpdateMCModGetter_ExpanderItemClick" HorizontalAlignment="Right"/>
                         <uc:ExpanderMenuItem x:Name="emiConfigs" Label="Configs" Icon="Images/settings_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                             ExpanderItemClick="ExpanderMenuItem_ConfigsClick" HorizontalAlignment="Right"/>
                         <uc:ExpanderMenuItem x:Name="emiClientModBlacklist" Label="Client Mod Blacklist" Icon="Images/blacklist_icon.png" Width="{Binding Width, ElementName=expSideMenu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -117,7 +119,7 @@
             <Button x:Name="btnAddMod" Content="Add Mod(s)..." Margin="0,0,0,228" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnAddMod_Click" Height="30" VerticalAlignment="Bottom"/>
             <Button x:Name="btnDeleteMod" Content="Delete Selected Mod" Margin="0,0,0,10" Width="228" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Right" Click="BtnDeleteMod_Click" Height="30" VerticalAlignment="Bottom"/>
             <TreeView x:Name="tvMods" Margin="216,36,233,10" Background="LightGray"
-                  ItemsSource="{Binding CurrentModList, ElementName=wndMain}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter">
+                  ItemsSource="{Binding CurrentModList, ElementName=wndMain}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter" KeyDown="tvMods_KeyDown">
                 <TreeView.ContextMenu>
                     <ContextMenu>
                         <MenuItem x:Name="mnuiRefreshMods" Header="Refresh Mod List" Click="mnuiRefreshMods_Click">

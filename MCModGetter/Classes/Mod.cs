@@ -20,5 +20,8 @@ namespace MCModGetter.Classes
         public bool IsOnLocalMachine { get; set; }
 
         public ImageSource ListViewIcon { get; set; } = new BitmapImage(new Uri("Images/file.png", UriKind.Relative));
+
+        public override string ToString() => Name;
+        
     }
 }

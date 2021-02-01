@@ -105,6 +105,9 @@
     <Reference Include="MySql.Data, Version=8.0.20.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <HintPath>..\packages\MySql.Data.8.0.20\lib\net452\MySql.Data.dll</HintPath>
     </Reference>
+    <Reference Include="NetSparkle, Version=0.19.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetSparkle.New.0.19.2\lib\net45\NetSparkle.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -163,11 +166,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Classes\DBConfig.cs" />
     <Compile Include="Classes\Extensions.cs" />
+    <Compile Include="Classes\FTPModConnection.cs" />
     <Compile Include="Classes\GetSkin.cs" />
     <Compile Include="Classes\Mod.cs" />
+    <Compile Include="Classes\ModConnection.cs" />
     <Compile Include="Classes\ResourceLoader.cs" />
+    <Compile Include="Classes\RESTModConnection.cs" />
     <Compile Include="UserControls\BlacklistControl.xaml.cs">
       <DependentUpon>BlacklistControl.xaml</DependentUpon>
     </Compile>
@@ -274,6 +279,7 @@
   <ItemGroup>
     <Resource Include="FodyWeavers.xml" />
     <Resource Include="Images\blacklist_icon.png" />
+    <Resource Include="Images\github_update.png" />
     <Content Include="Resources\emgei.wav" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

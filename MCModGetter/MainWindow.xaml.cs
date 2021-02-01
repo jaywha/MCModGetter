@@ -22,6 +22,7 @@ using System.Net;
 using System.Windows.Media.Imaging;
 using System.Reflection;
 using System.Windows.Controls;
+using System.Text;
 
 namespace MCModGetter
 {
@@ -43,6 +44,8 @@ namespace MCModGetter
 
         private const string BaseURL = "ftp://144.217.65.175/mods/";
         private const string BaseTitle = "Minecraft Mod Manager";
+
+        private const string UpdateURL = "https://github.com/jaywha/MCModGetter/releases/latest";
 
         private string _modFileLocation = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\.minecraft\mods\";
 
@@ -67,11 +70,12 @@ namespace MCModGetter
             }
         }
 
-        private NetworkCredential VoodooCredential = new NetworkCredential("jayw685@gmail.com.6857", DBConfig.FakePebble);
+        private FTPModConnection VoodooConnection = new FTPModConnection("144.217.65.175", "jayw685@gmail.com.6857", Encoding.UTF8.GetString(Convert.FromBase64String("cHQyVDBneTY4RQ==")));
+        private RESTModConnection HostedConnection = new RESTModConnection("https://hostname.com/");
 
         private StreamWriter CurrentLog;
         private string LogDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\MCModGetter-Logs\";
-        private bool UpdateRanOnce = false;
+        //private bool UpdateRanOnce = false;
 
         private AuthenticateResponse UserAuthCache;
 
@@ -259,6 +263,14 @@ namespace MCModGetter
             }
         }
 
+        private void tvMods_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.Key == Key.Delete)
+            {
+                BtnDeleteMod_Click(sender, e);
+            }
+        }
+
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
         #endregion
 
@@ -372,7 +384,7 @@ namespace MCModGetter
 
         private async void btnUpdateMods_Click(object sender, RoutedEventArgs e)
         {
-            UpdateRanOnce = true;
+            // UpdateRanOnce = true;
             Notify.ShowBalloonTip("Start MC Mod Updates", "We're updating mods now. This should take just a couple of minutes...", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
             fileSystemWatcher.UnsetListeners(FileSystemWatcher_FileEvent);
 
@@ -440,14 +452,9 @@ namespace MCModGetter
                 // Enumerate files and directories to download
                 List<string> Files = new List<string>();
 
-                // Get the object used to communicate with the server.
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(currentURL);
-                request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
-
-                // This example assumes the FTP site uses anonymous logon.
-                request.Credentials = VoodooCredential;
-
-                FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+                // Call a ModConnection subclass
+                VoodooConnection.Connect();
+                WebResponse response = VoodooConnection.Result();
 
                 Stream responseStream = response.GetResponseStream();
                 StreamReader reader = new StreamReader(responseStream);
@@ -462,7 +469,7 @@ namespace MCModGetter
                     else Files.Add(newFile.Last());
                 }
 
-                Console.WriteLine($"Directory List Complete, status: {response.StatusDescription}");
+                Console.WriteLine($"Directory List Complete, status: {VoodooConnection.Status}");
                 Console.WriteLine("=== Start Listing ===");
 
                 reader.Close();
@@ -554,16 +561,11 @@ namespace MCModGetter
         private void DownloadMod(string remoteURL, string localFilePath)
         {
             string trueLocal = localFilePath.Replace('/', '\\');
-            string dirPath = trueLocal.Substring(0, trueLocal.LastIndexOf('\\') + 1);
+            // string dirPath = trueLocal.Substring(0, trueLocal.LastIndexOf('\\') + 1);
 
-            // Get the object used to communicate with the server.
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(remoteURL);
-            request.Method = WebRequestMethods.Ftp.DownloadFile;
-
-            // This example assumes the FTP site uses anonymous logon.
-            request.Credentials = VoodooCredential;
-
-            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+            // Call a ModConnection subclass
+            VoodooConnection.Connect();
+            WebResponse response = VoodooConnection.Result(remoteURL);
 
             Directory.CreateDirectory(trueLocal.Substring(0, trueLocal.LastIndexOf('\\') + 1));
 
@@ -601,6 +603,7 @@ namespace MCModGetter
             }
         }
 
+        /** Obsolete
         private void Image_MouseDown(object sender, MouseButtonEventArgs e)
         {
             var snd = "tmp.wav";
@@ -621,6 +624,7 @@ namespace MCModGetter
             soundEffect.Volume = 0.4;
             soundEffect.Play();
         }
+        */
         #endregion
 
         private void Notify_TrayMouseDoubleClick(object sender, RoutedEventArgs e)
@@ -629,6 +633,16 @@ namespace MCModGetter
             BringIntoView();
             Activate();
             Focus();
+        }
+
+        private async void emiUpdateMCModGetter_ExpanderItemClick(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void Image_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // ?
         }
     }
 }
