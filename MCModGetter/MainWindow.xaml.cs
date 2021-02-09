@@ -42,7 +42,7 @@ namespace MCModGetter
         public ObservableCollection<Mod> CurrentModList { get; private set; } = new ObservableCollection<Mod>();
         public List<Mod> ServerModList { get; private set; } = new List<Mod>();
 
-        private const string BaseURL = "ftp://144.217.65.175/mods/";
+        private const string BaseURL = "ftp://192.168.1.7/";
         private const string BaseTitle = "Minecraft Mod Manager";
 
         private const string UpdateURL = "https://github.com/jaywha/MCModGetter/releases/latest";
@@ -70,8 +70,8 @@ namespace MCModGetter
             }
         }
 
-        private FTPModConnection VoodooConnection = new FTPModConnection("144.217.65.175", "jayw685@gmail.com.6857", Encoding.UTF8.GetString(Convert.FromBase64String("cHQyVDBneTY4RQ==")));
-        private RESTModConnection HostedConnection = new RESTModConnection("https://hostname.com/");
+        private FTPModConnection FTPConnection = new FTPModConnection("192.168.1.7", "gnomechild", "qzmp12368723541a!");
+        // private RESTModConnection HostedConnection = new RESTModConnection("https://hostname.com/");
 
         private StreamWriter CurrentLog;
         private string LogDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\MCModGetter-Logs\";
@@ -445,6 +445,7 @@ namespace MCModGetter
 
         public void ProbeFiles(string innerPath = "")
         {
+            // TODO: Create new ModConnection instance for each recursive call
             string currentURL = BaseURL + innerPath;
 
             try
@@ -453,8 +454,8 @@ namespace MCModGetter
                 List<string> Files = new List<string>();
 
                 // Call a ModConnection subclass
-                VoodooConnection.Connect();
-                WebResponse response = VoodooConnection.Result();
+                if (!FTPConnection.Connect()) throw new InvalidOperationException("Connection to FTP server failed... ");
+                WebResponse response = FTPConnection.Result(WebRequestMethods.Ftp.ListDirectoryDetails);
 
                 Stream responseStream = response.GetResponseStream();
                 StreamReader reader = new StreamReader(responseStream);
@@ -462,14 +463,14 @@ namespace MCModGetter
                 while (!reader.EndOfStream)
                 {
                     var newFile = reader.ReadLine().Split(' ');
-                    if (newFile.First().StartsWith("d"))
+                    if (newFile.First().StartsWith("d") || newFile.Any(token => token.Contains("DIR"))) // Linux OR Windows FTP
                     {
                         Files.Add("DIR" + newFile.Last());
                     }
                     else Files.Add(newFile.Last());
                 }
 
-                Console.WriteLine($"Directory List Complete, status: {VoodooConnection.Status}");
+                Console.WriteLine($"Directory List Complete, status: {FTPConnection.Status}");
                 Console.WriteLine("=== Start Listing ===");
 
                 reader.Close();
@@ -564,8 +565,9 @@ namespace MCModGetter
             // string dirPath = trueLocal.Substring(0, trueLocal.LastIndexOf('\\') + 1);
 
             // Call a ModConnection subclass
-            VoodooConnection.Connect();
-            WebResponse response = VoodooConnection.Result(remoteURL);
+            FTPConnection.Connect();
+            FTPConnection.Path = remoteURL;
+            WebResponse response = FTPConnection.Result(WebRequestMethods.Ftp.DownloadFile);
 
             Directory.CreateDirectory(trueLocal.Substring(0, trueLocal.LastIndexOf('\\') + 1));
 

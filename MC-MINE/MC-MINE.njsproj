@@ -33,6 +33,7 @@
     <Content Include="public\index.html" />
     <Content Include="src\App.vue" />
     <Content Include="src\assets\clips\tower.mp4" />
+    <Content Include="src\assets\img\server-icon.png" />
     <Content Include="src\components\Home.vue" />
     <Content Include="package.json" />
     <Content Include="README.md" />
@@ -43,10 +44,12 @@
     <Folder Include="src\" />
     <Folder Include="src\assets\" />
     <Folder Include="src\assets\clips\" />
+    <Folder Include="src\assets\img\" />
     <Folder Include="src\components\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="babel.config.js" />
+    <Content Include="src\components\Server.vue" />
     <Content Include="src\main.js" />
   </ItemGroup>
   <PropertyGroup>

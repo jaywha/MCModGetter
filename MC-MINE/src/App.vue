@@ -9,6 +9,7 @@
 
 <script>
     import Home from './components/Home.vue';
+    import Server from './components/Server.vue';
 
     export default {
         name: 'app',
@@ -16,7 +17,8 @@
             document.body.classList.add("mainBody");
         },
         components: {
-            Home
+            Home,
+            Server
         }
     };
 </script>

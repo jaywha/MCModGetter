@@ -41,14 +41,26 @@ namespace MCModGetter.Classes
             {
                 _ip = value;
                 OnPropertyChanged();
+                OnPropertyChanged("WorkingURL");
             }
         }
 
-        private string _workingURL;
+        private string _path = "";
+
+        public string Path
+        {
+            get => _path;
+            set {
+                _path = value;
+                OnPropertyChanged();
+                OnPropertyChanged("WorkingURL");
+            }
+        }
+
 
         public string WorkingURL
         {
-            get => $"ftp://{IP}/";
+            get => $"ftp://{IP}/{Path}";
         }
 
         #endregion
@@ -66,15 +78,15 @@ namespace MCModGetter.Classes
         public override bool Connect()
         {
             IsConnected = true;
-            return false;
+            return true;
         }
 
-        public WebResponse Result(string path, string requestMethod = "LIST")
+        public WebResponse Result(string requestMethod = WebRequestMethods.Ftp.ListDirectoryDetails)
         {
             if (!IsConnected)
                 throw new InvalidOperationException("Can't get data before connecting");
 
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(path);
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(WorkingURL);
             request.Method = requestMethod;
             request.Credentials = new NetworkCredential(UserName, Password);
             FtpWebResponse response = (FtpWebResponse)request.GetResponse();
@@ -84,6 +96,6 @@ namespace MCModGetter.Classes
             return response;
         }
 
-        public override WebResponse Result() => Result("/mods");
+        public override WebResponse Result() => Result(WebRequestMethods.Ftp.ListDirectoryDetails);
     }
 }
