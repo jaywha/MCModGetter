@@ -28,9 +28,22 @@ jobs:
         
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1.0.5
+
+      - name: Setup Node (and NPM)
+        uses: actions/setup-node@v1
+        with: 
+          node-version: '12.x'
         
       - name: Restore NuGet packages
         run: nuget restore MCModGetter.sln
+
+      - name: NPM Install packages for Pages site
+        run: npm install
+        working-directory: GitHubPagesWebsite
+
+      - name: NPM Install packages for REST API
+        run: npm install
+        working-directory: MC-MINE
         
       - name: Build the Solution
         run: msbuild MCModGetter.sln
