@@ -1,4 +1,4 @@
-[![CI](https://github.com/jaywha/MCModGetter/actions/workflows/DotNetFrameworkFlow.yml/badge.svg?branch=master)](https://github.com/jaywha/MCModGetter/actions/workflows/DotNetFrameworkFlow.yml)
+[![CI](https://github.com/jaywha/MCModGetter/actions/workflows/DotNetFrameworkFlow.yml/badge.svg?branch=master&kill_cache=1")](https://github.com/jaywha/MCModGetter/actions/workflows/DotNetFrameworkFlow.yml)
 
 # MCModGetter
 Basic mod manager for vanilla MC launcher.
