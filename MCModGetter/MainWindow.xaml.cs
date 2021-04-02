@@ -81,6 +81,8 @@ namespace MCModGetter
 
         private readonly SettingsControl settings;
         private readonly BlacklistControl blacklist;
+
+        private const int GrowButtonMod = 8;
         #endregion
 
         public void SetupErrorCatchers()
@@ -409,6 +411,10 @@ namespace MCModGetter
             }
             catch (IOException ioe)
             {
+                if(CurrentLog != null) {
+                    CurrentLog.WriteLine("Update Mods Error: " + Environment.NewLine + ioe.Message);
+                }
+
                 Toast.MessageQueue.Enqueue("Minecraft or some other program is blocking access to mod files!", "Task Manager", delegate
                 {
                     Process.GetProcessesByName("taskmgr.exe");
@@ -502,7 +508,7 @@ namespace MCModGetter
                             catch (Exception e)
                             {
                                 // Print error (but continue with other files)
-                                CurrentLog.WriteLine($"Error enumerating folder {file}!");
+                                CurrentLog.WriteLine($"Error enumerating folder {file}!{Environment.NewLine}{e.Message}");
                             }
                         }
                         else // is file
@@ -637,14 +643,40 @@ namespace MCModGetter
             Focus();
         }
 
-        private async void emiUpdateMCModGetter_ExpanderItemClick(object sender, EventArgs e)
+        private void emiUpdateMCModGetter_ExpanderItemClick(object sender, EventArgs e)
         {
             
         }
 
         private void Image_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // ?
+            if(sender is Image i && i.Name.Contains("Close"))
+            {
+                Close();
+            }
+        }
+
+        private void wndMain_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+                try { DragMove(); } catch { }
+        }
+
+        private void imgCloseWindow_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (sender is Image i) {
+                i.Width += GrowButtonMod;
+                i.Height += GrowButtonMod;
+            }
+        }
+
+        private void imgCloseWindow_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (sender is Image i)
+            {
+                i.Width -= GrowButtonMod;
+                i.Height -= GrowButtonMod;
+            }
         }
     }
 }

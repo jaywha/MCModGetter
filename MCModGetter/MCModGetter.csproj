@@ -280,6 +280,7 @@
     <Resource Include="FodyWeavers.xml" />
     <Resource Include="Images\blacklist_icon.png" />
     <Resource Include="Images\github_update.png" />
+    <Resource Include="Images\close_window_icon.png" />
     <Content Include="Resources\emgei.wav" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
