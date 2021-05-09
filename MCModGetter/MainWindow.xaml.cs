@@ -274,6 +274,11 @@ namespace MCModGetter
         }
 
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Process.Start(ModFileLocation);
+
+        private void tvMods_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+
+        }
         #endregion
 
         #region Expander Menu Item Clicks

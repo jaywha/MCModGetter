@@ -130,7 +130,7 @@
                 <Button x:Name="btnAddMod" Grid.Column="2" Content="Add Mod(s)..." Margin="0,0,0,228" Width="200" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Center" Click="BtnAddMod_Click" Height="30" VerticalAlignment="Bottom"/>
                 <Button x:Name="btnDeleteMod" Grid.Column="2" Content="Delete Selected Mod" Margin="0,0,0,10" Width="200" Style="{StaticResource MainButtonStyle}" HorizontalAlignment="Center" Click="BtnDeleteMod_Click" Height="30" VerticalAlignment="Bottom"/>
                 <TreeView x:Name="tvMods" Grid.Column="1" Margin="10,36,10,10" Background="LightGray"
-                  ItemsSource="{Binding CurrentModList, ElementName=wndMain}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter" KeyDown="tvMods_KeyDown">
+                  ItemsSource="{Binding CurrentModList, ElementName=wndMain}" AllowDrop="True" Drop="tvMods_Drop" DragEnter="tvMods_DragEnter" KeyDown="tvMods_KeyDown" MouseDown="tvMods_MouseDown">
                     <TreeView.ContextMenu>
                         <ContextMenu>
                             <MenuItem x:Name="mnuiRefreshMods" Header="Refresh Mod List" Click="mnuiRefreshMods_Click">
